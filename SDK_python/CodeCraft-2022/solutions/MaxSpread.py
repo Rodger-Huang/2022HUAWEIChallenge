@@ -24,15 +24,22 @@ def getQoSConstraint():
     return qos_constraint
 
 def getQoS():
+    qos_constraint = getQoSConstraint()
     qos = {}
-    with open("../../data/qos.csv") as f:
+    client_site_qos_ok = {}  #client -> [site1,site2,...]对于每个客户符合QoS约束的站点
+    with open("/data/qos.csv") as f:
         f_csv = csv.reader(f)
         headers = next(f_csv)
         M = len(headers) - 1
+        for i in range(1,M+1):
+            client_site_qos_ok[headers[i]] = []
         for row in f_csv:
             for i in range(M):
                 qos[(row[0], headers[i+1])] = int(row[i+1])
-    return qos
+                if int(row[i+1]) < qos_constraint:
+                    client_site_qos_ok[headers[i+1]].append(row[0])
+    return qos, client_site_qos_ok
+
 def getDemand():
     demand = {}
     with open("../../data/demand.csv") as f:
@@ -48,7 +55,8 @@ def getDemand():
     T = len(demand[headers[1]]) # T
     return demand, T
 
-#对于某个客户client，找到满足QoS约束的，且带宽大于请求带宽的服务器
+#对于某个客户client，找到满足QoS约束的，且带宽大于请求带宽的服务器，QOS约束在getQoS那里找好了对每个客户端符合约束的站点列表
+'''
 def getSitesBiggerThanRequired(site_remaining_bandwidth, required, client, qos, qos_constraint):
     result = []
     for site_name, remaining_bandwidth in site_remaining_bandwidth.items():
@@ -57,33 +65,35 @@ def getSitesBiggerThanRequired(site_remaining_bandwidth, required, client, qos, 
     if debug:
         print("required = ",required,"  sites = ",result)
     return result
+'''
+#-------------全局变量，都是只读的，多个线程可以共享这些全局变量，节省内存使用-------------
+demand, timestamps = getDemand()
+qos_constraint = getQoSConstraint()
+qos, client_site_qos_ok  = getQoS()
+site_bandwidth, site_number = getSiteBandwidth()
 
-def findMaximumSpread(site_reamining_bandwidth, client_total_demand, client, qos, qos_constraint):
+def findMaximumSpread(site_reamining_bandwidth, client_total_demand, client):
     spread_dst = []
     max_spread = 0
-    site_number = len(site_reamining_bandwidth)
-    for i in range(1,site_number+1):
-        #将流量平均分到i个服务器上,每个服务器需要有剩余required的带宽
+    #在client_site_qos_ok里面找
+    qos_site_remaining_bandwidth = {}
+    for s in client_site_qos_ok[client]:
+        qos_site_remaining_bandwidth[s] = site_reamining_bandwidth[s]
+
+    for i in range(len(client_site_qos_ok[client]), 0, -1):
         required = math.ceil(client_total_demand / i)
-        #看看哪些服务器有剩余required的带宽
-        result = getSitesBiggerThanRequired(site_reamining_bandwidth, required, client, qos, qos_constraint)
-        #如果能找到至少i个这样的服务器，就说明可以这样分
-        if len(result) >= i:
-            spread_dst = copy.deepcopy(result)
+        result = []
+        sort_qos_site_reamining_bandwidth = sorted(qos_site_remaining_bandwidth.items(),key=lambda x:x[1], reverse = True)
+        #剩余带宽从大到小排序，如果前i个都有比请求多的带宽，说明有这么个方案，返回前i个（带宽剩余绝对值最多的i个）。如果有需要，可以再往后找找，多返回几个。
+        if sort_qos_site_reamining_bandwidth[i-1][1] >= required:
+            #返回元组列表（site,remaining_bandwidth)
+            spread_dst = sort_qos_site_reamining_bandwidth[0:i]
             max_spread = i
-    if(debug):
-        print("maximun spread = ",max_spread, "   spread_dst = ",spread_dst)
+            return spread_dst, max_spread
     return spread_dst, max_spread
 
 
 
-
-
-#-------------全局变量，都是只读的，多个线程可以共享这些全局变量，节省内存使用-------------
-demand, timestamps = getDemand()
-qos_constraint = getQoSConstraint()
-qos = getQoS()
-site_bandwidth, site_number = getSiteBandwidth()
 #---------------------------线程之间同步信号量------------------------------------
 lock_1 = threading.Lock()
 lock_2 = threading.Lock()
@@ -179,32 +189,30 @@ def average_max_spread():
             #如果平均分行不通，需要进行其他分配方案 To do，有待补充
             if max_spread == 0:
                 print("Error! No solution using max spread.")
-            for site in spread_dst:
+            for site, bandwidth in spread_dst:
                 client_demand_for_current_site = math.ceil(client_left_demand/max_spread)
                 site_remaining_bandwidth[site] -= client_demand_for_current_site
 
                 if test:
                     site_request_queue[site].append(client_demand_for_current_site)
 
-                if site != spread_dst[-1]:
-                    solution.write("<" + site + "," + str(client_demand_for_current_site) + ">,")
+                if site == spread_dst[-1][0]:
+                    solution.write("<" + site + "," + str(client_left_demand-client_demand_for_current_site*(len(spread_dst)-1)) + ">,")
                 else:
                     solution.write("<" + site + "," + str(client_demand_for_current_site) + ">")
             solution.write("\n")
         
         if test:
             current_ts_total_cost = 0
-        for site, request_queue in site_request_queue.items():
-            tail95_index = math.ceil(len(request_queue) * 0.95) - 1
-            if debug:
-                print("tail95_index = ",tail95_index)
-            request_queue.sort()
-            if debug:
-                print("request queue = ",request_queue)
-            tail95_bandwidth = request_queue[tail95_index]
-            if test:
+            for site, request_queue in site_request_queue.items():
+                tail95_index = math.ceil(len(request_queue) * 0.95) - 1
+                if debug:
+                    print("tail95_index = ",tail95_index)
+                request_queue.sort()
+                if debug:
+                    print("request queue = ",request_queue)
+                tail95_bandwidth = request_queue[tail95_index]
                 current_ts_total_cost += tail95_bandwidth
-        if test:
             total_cost += current_ts_total_cost
     if debug and test:
         print("total cost = ", total_cost)
