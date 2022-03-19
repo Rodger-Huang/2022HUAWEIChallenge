@@ -9,9 +9,9 @@
 ## 关于提交
 1. 提交前检查代码中文件路径是否正确
 
-***数据读取在目录`/data`下***
+**数据读取在目录`/data`下**
 
-***数据保存在文件`/output/solution.txt`中***
+**数据保存在文件`/output/solution.txt`中**
 
 2. 生成压缩文件[CodeCraft-2022.zip](SDK_python/CodeCraft-2022.zip)：
 ```
