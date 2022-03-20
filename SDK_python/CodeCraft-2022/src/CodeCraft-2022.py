@@ -1,9 +1,14 @@
 import csv
 import copy
 import math
+import os.path as osp
+
+path_input = 'data'
+path_output = 'output'
+
 def getSiteBandwidth():
     site_bandwidth = {}
-    with open("/data/site_bandwidth.csv") as f:
+    with open(osp.join(path_input, "site_bandwidth.csv")) as f:
         f_csv = csv.reader(f)
         headers = next(f_csv)
         for row in f_csv:
@@ -12,15 +17,14 @@ def getSiteBandwidth():
     return site_bandwidth, N
 
 def getQoSConstraint():
-    with open("/data/config.ini", mode='r') as f:
+    with open(osp.join(path_input, "config.ini"), mode='r') as f:
         qos_constraint = int(f.readlines()[1].split("=")[-1])
     return qos_constraint
 
-def getQoS():
-    qos_constraint = getQoSConstraint()
+def getQoS(qos_constraint):
     qos = {}
     client_site_qos_ok = {}  #client -> [site1,site2,...]对于每个客户符合QoS约束的站点
-    with open("/data/qos.csv") as f:
+    with open(osp.join(path_input, "qos.csv")) as f:
         f_csv = csv.reader(f)
         headers = next(f_csv)
         M = len(headers) - 1
@@ -35,7 +39,7 @@ def getQoS():
 
 def getDemand():
     demand = {}
-    with open("/data/demand.csv") as f:
+    with open(osp.join(path_input, "demand.csv")) as f:
         f_csv = csv.reader(f)
         headers = next(f_csv)
         M = len(headers) - 1 # M client
@@ -50,7 +54,7 @@ def getDemand():
 
 demand, timestamps = getDemand()
 qos_constraint = getQoSConstraint()
-qos, client_site_qos_ok  = getQoS()
+qos, client_site_qos_ok  = getQoS(qos_constraint)
 site_bandwidth, site_number = getSiteBandwidth()
 
 
@@ -87,7 +91,7 @@ def findMaximumSpread(site_reamining_bandwidth, client_total_demand, client):
 
 def average_max_spread():
     #total_cost为每个时刻分配完之后，所有服务器95%带宽的总和，也就是我们需要优化的目标
-    solution = open("/output/solution.txt",mode='w')
+    solution = open(osp.join(path_output, "solution.txt"),mode='w')
 
     for t in range(timestamps):
         site_remaining_bandwidth = copy.deepcopy(site_bandwidth)
@@ -95,6 +99,10 @@ def average_max_spread():
         for client in demand.keys():
             solution.write(client+":")
             client_left_demand = demand[client][t]
+            if client_left_demand == 0:
+                if t != timestamps-1:
+                    solution.write("\n")
+                continue
             spread_dst, max_spread = findMaximumSpread(site_remaining_bandwidth, client_left_demand, client)
             #如果平均分行不通，需要进行其他分配方案 To do，有待补充
             if max_spread == 0:
@@ -106,8 +114,42 @@ def average_max_spread():
                     solution.write("<" + site + "," + str(client_left_demand-client_demand_for_current_site*(len(spread_dst)-1)) + ">")
                 else:
                     solution.write("<" + site + "," + str(client_demand_for_current_site) + ">,")
-            solution.write("\n")
+            if t != timestamps-1:
+                solution.write("\n")
     solution.close()
-        
+
+'''
+先直接将客户的需求平均分配给可用的边缘节点，然后再逐一检查边缘节点是否超过服务能力，
+超过再通过递归的形式解决
+'''
+def average_recursive(timestamp):
+    # 将用户需求平均分配到每个节点，记录每个节点上各个用户的使用情况
+    site_client_allocation = {}
+    for site in site_bandwidth.keys():
+        site_client_allocation[site] = []
+    for client in demand.keys():
+        usage = demand[client][timestamp] // len(client_site_qos_ok[client])
+        for i, site in enumerate(client_site_qos_ok[client]):
+            if i != len(client_site_qos_ok[client])-1:
+                site_client_allocation[site].append({client: usage})
+            else:
+                site_client_allocation[site].append({client: demand[client][timestamp] - i*usage})
+    # 检查每个边缘节点是否超过服务能力
+    for site in site_bandwidth.keys():
+        allocation = 0
+        for client in site_client_allocation[site]:
+            for value in client.values():
+                allocation += value
+        if allocation > site_bandwidth[site]:
+            # 广度优先遍历
+            queue = []
+            for client in site_client_allocation[site]:
+                queue.append(client)
+            for client in queue:
+                for site in client_site_qos_ok[client]:
+                    # TODO 未完待续
+                    a = 1
+
 if __name__=='__main__':
-    average_max_spread()
+    # average_max_spread()
+    average_recursive(0)
