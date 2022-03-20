@@ -6,6 +6,17 @@
 - 变量命名建议（下划线方式，注意语义谢谢！），例如：qos_constraint, site_bandwidth_limit...
 - 函数命名建议（驼峰式），例如：getSiteBandwidth(), getClientDemand()...
 
+## 关于提交
+1. 提交前检查代码中文件路径是否正确
+
+**数据读取在目录`/data`下**
+
+**数据保存在文件`/output/solution.txt`中**
+
+2. 生成压缩文件[CodeCraft-2022.zip](SDK_python/CodeCraft-2022.zip)：
+```
+bash SDK_python/CodeCraft_zip.sh
+```
 ## 目录管理
 大家可以把不同的方案写成不同的py文件，放在目录SDK_python/CodeCraft-2022/solutions下。要测试的话就把相应内容copy到SDK_python/CodeCraft-2022/src/CodeCraft-2022.py。或者是在SDK_python/CodeCraft-2022/src/CodeCraft-2022.py中进行import的调用。
 
