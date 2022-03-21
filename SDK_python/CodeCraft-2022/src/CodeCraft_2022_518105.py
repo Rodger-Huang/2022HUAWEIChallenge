@@ -3,6 +3,7 @@ import math
 import sys
 import os
 import os.path as osp
+import numpy as np
 
 # NOTE 提交前记得修改路径
 input_path = "/data"
@@ -82,6 +83,9 @@ if __name__=='__main__':
                     client4site[n].append(m)
     
     line_count = 0
+    site_t = {}
+    for site in site_bandwidth.keys():
+        site_t[site] = {'usage': []}
     for t in range(timestamps):
         client_info = {}
         for client in list(demand.keys()):
@@ -128,39 +132,74 @@ if __name__=='__main__':
                     if assigned_bandwidth < 0:
                         print("computation error")
                         # sys.exit(0)
-                    site_allocation[site][client] = assigned_bandwidth
-                    site_allocation[site]['usage'] += assigned_bandwidth
+                    site_allocation[site][client] = int(assigned_bandwidth)
+                    site_allocation[site]['usage'] += int(assigned_bandwidth)
 
         # 对边缘节点的分配流量进行再分配
-        site_allocation_order = sorted(site_allocation.items(), key=lambda x : x[1]['usage'], reverse=True)
-        for site, client_allocation in site_allocation_order:
-            for client in client_allocation:
-                if client != 'usage':
-                    # 记录当前客户使用的流量较小的边缘节点
-                    site_client_exceed = {}
-                    for site_client in site4client[client]:
-                        exceed = site_allocation[site]['usage'] - site_allocation[site_client]['usage']
-                        if exceed > 0:
-                            site_client_exceed[site_client] = exceed
-                    site_client_exceed = sorted(site_client_exceed.items(), key=lambda x : x[1], reverse=True)
-                    for site_client, _ in site_client_exceed:
-                        exceed = site_allocation[site]['usage'] - site_allocation[site_client]['usage']
-                        if exceed <= 0 or site_allocation[site][client] <= 0:
-                            break
-                        move_flow = min(min(exceed // 2, site_info[site_client][0]), site_allocation[site][client])
-                        if client not in site_allocation[site_client].keys():
-                            site_allocation[site_client][client] = move_flow
-                        else:
-                            site_allocation[site_client][client] += move_flow
-                        site_allocation[site_client]['usage'] += move_flow
-                        site_allocation[site][client] -= move_flow
-                        site_allocation[site]['usage'] -= move_flow
-                        site_info[site_client][0] -= move_flow
-                        site_info[site_client][1] -= move_flow
-                        site_info[site][0] += move_flow
-                        site_info[site][1] += move_flow 
+        # site_allocation_order = sorted(site_allocation.items(), key=lambda x : x[1]['usage'], reverse=True)
+        # for site, client_allocation in site_allocation_order:
+        #     for client in client_allocation:
+        #         if client != 'usage':
+        #             # 记录当前客户使用的流量较小的边缘节点
+        #             site_client_exceed = {}
+        #             for site_client in site4client[client]:
+        #                 exceed = site_allocation[site]['usage'] - site_allocation[site_client]['usage']
+        #                 if exceed > 0:
+        #                     site_client_exceed[site_client] = exceed
+        #             site_client_exceed = sorted(site_client_exceed.items(), key=lambda x : x[1], reverse=True)
+        #             for site_client, _ in site_client_exceed:
+        #                 exceed = site_allocation[site]['usage'] - site_allocation[site_client]['usage']
+        #                 if exceed <= 0 or site_allocation[site][client] <= 0:
+        #                     break
+        #                 move_flow = min(min(exceed // 2, site_info[site_client][0]), site_allocation[site][client])
+        #                 if client not in site_allocation[site_client].keys():
+        #                     site_allocation[site_client][client] = move_flow
+        #                 else:
+        #                     site_allocation[site_client][client] += move_flow
+        #                 site_allocation[site_client]['usage'] += move_flow
+        #                 site_allocation[site][client] -= move_flow
+        #                 site_allocation[site]['usage'] -= move_flow
+        #                 site_info[site_client][0] -= move_flow
+        #                 site_info[site_client][1] -= move_flow
+        #                 site_info[site][0] += move_flow
+        #                 site_info[site][1] += move_flow
 
-        # 输出答案
+        for site in site_bandwidth.keys():
+            site_t[site]['usage'].append(site_allocation[site]['usage'])
+            del site_allocation[site]['usage']
+            site_t[site][t] = site_allocation[site]
+
+    # 尽可能塞满每一个边缘节点：超过95%的节点就尽量塞到上限，低于95%的节点就尽量塞到95%
+    # 记录处理过的节点，避免移入节点的流量在后续操作其他节点时又流出
+    site_processed = set()
+    position_95 = int(math.ceil(timestamps * 0.95) - 1)
+    for site in site_t:
+        site_processed.add(site)
+        index = np.argsort(site_t[site]['usage'])
+        value_95 = site_t[site]['usage'][index[position_95]]
+        for t in range(timestamps):
+            if np.where(index==t)[0][0] <= position_95:
+                left = value_95 - site_t[site]['usage'][t]
+
+            elif np.where(index==t)[0][0] > position_95:
+                left = site_bandwidth[site] - site_t[site]['usage'][t]
+
+            if site in client4site.keys():
+                for client in client4site[site]:
+                    for site_client in site4client[client]:
+                        if site_client not in site_processed and left > 0 and client in site_t[site_client][t].keys():
+                            move_flow = min(left, site_t[site_client][t][client])
+                            if client in site_t[site][t].keys():
+                                site_t[site][t][client] += move_flow
+                            else:
+                                site_t[site][t][client] = move_flow
+                            site_t[site]['usage'][t] += move_flow
+                            site_t[site_client][t][client] -= move_flow
+                            site_t[site_client]['usage'][t] -= move_flow
+                            left -= move_flow
+
+    # 输出答案
+    for t in range(timestamps):
         for client in [x[0] for x in client_info_order]:
             line_count += 1
             solution.write(client + ":")
@@ -171,7 +210,8 @@ if __name__=='__main__':
             writed_site_count = 0
             for site in list(site4client[client]):
                 count += 1 # 当前使用的边缘节点数量
-                assigned_bandwidth = site_allocation[site][client] if client in site_allocation[site].keys() else 0
+                # assigned_bandwidth = site_allocation[site][client] if client in site_allocation[site].keys() else 0
+                assigned_bandwidth = site_t[site][t][client] if client in site_t[site][t].keys() else 0
                 if assigned_bandwidth != 0:
                     if assigned_bandwidth < 0:
                         print(" computation error ")
@@ -195,42 +235,6 @@ if __name__=='__main__':
                 else:
                     if count == len(list(site4client[client])) and line_count != timestamps*len(demand):
                         solution.write("\n")
-        
-        # check
-        # print(t)
-        total_demand = 0
-        for client in list(client_info.keys()):
-            # print(client)
-            # print(client_info[client][0], client_info[client][1])
-            total_demand += client_info[client][0]
-            if client_info[client][1] > 0:
-                print("Insufficient allocation")
-                solution.close()
-                os.remove(output_path)
-                sys.exit()
-        
-        total_assigned = 0
-        for site in list(site_info.keys()):
-            # print(site)
-            # print(site_info[site][0], site_info[site][1])
-            total_assigned += (site_bandwidth[site] - site_info[site][1])
-            if site_info[site][1] < 0:
-                print("Upper limit exceeded")
-                solution.close()
-                os.remove(output_path)
-                sys.exit()
-
-        print(total_demand)
-        print(total_assigned)
-
-        if total_demand != total_assigned:
-            print("allocation mismatching")
-            solution.close()
-            os.remove(output_path)
-            sys.exit()
-        
-        # breakpoint()
 
     solution.close()
-    # os.remove(output_path)
 
