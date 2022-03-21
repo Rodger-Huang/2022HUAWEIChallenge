@@ -136,24 +136,29 @@ if __name__=='__main__':
         for site, client_allocation in site_allocation_order:
             for client in client_allocation:
                 if client != 'usage':
+                    # 记录当前客户使用的流量较小的边缘节点
+                    site_client_exceed = {}
                     for site_client in site4client[client]:
-                        if site_allocation[site][client] <= 0:
+                        exceed = site_allocation[site]['usage'] - site_allocation[site_client]['usage']
+                        if exceed > 0:
+                            site_client_exceed[site_client] = exceed
+                    site_client_exceed = sorted(site_client_exceed.items(), key=lambda x : x[1], reverse=True)
+                    for site_client, _ in site_client_exceed:
+                        exceed = site_allocation[site]['usage'] - site_allocation[site_client]['usage']
+                        if exceed <= 0 or site_allocation[site][client] <= 0:
                             break
-                        if site_client != site:
-                            exceed = site_allocation[site]['usage'] - site_allocation[site_client]['usage']
-                            if exceed > 0:
-                                move_flow = min(min(exceed // 2, site_info[site_client][0]), site_allocation[site][client])
-                                if client not in site_allocation[site_client].keys():
-                                    site_allocation[site_client][client] = move_flow
-                                else:
-                                    site_allocation[site_client][client] += move_flow
-                                site_allocation[site_client]['usage'] += move_flow
-                                site_allocation[site][client] -= move_flow
-                                site_allocation[site]['usage'] -= move_flow
-                                site_info[site_client][0] -= move_flow
-                                site_info[site_client][1] -= move_flow
-                                site_info[site][0] += move_flow
-                                site_info[site][1] += move_flow 
+                        move_flow = min(min(exceed // 2, site_info[site_client][0]), site_allocation[site][client])
+                        if client not in site_allocation[site_client].keys():
+                            site_allocation[site_client][client] = move_flow
+                        else:
+                            site_allocation[site_client][client] += move_flow
+                        site_allocation[site_client]['usage'] += move_flow
+                        site_allocation[site][client] -= move_flow
+                        site_allocation[site]['usage'] -= move_flow
+                        site_info[site_client][0] -= move_flow
+                        site_info[site_client][1] -= move_flow
+                        site_info[site][0] += move_flow
+                        site_info[site][1] += move_flow 
 
         # 输出答案
         for client in [x[0] for x in client_info_order]:
@@ -166,8 +171,6 @@ if __name__=='__main__':
             writed_site_count = 0
             for site in list(site4client[client]):
                 count += 1 # 当前使用的边缘节点数量
-                # assigned_bandwidth = site_info[site][0] - site_info[site][1]
-                # site_info[site][0] = site_info[site][1]
                 assigned_bandwidth = site_allocation[site][client] if client in site_allocation[site].keys() else 0
                 if assigned_bandwidth != 0:
                     if assigned_bandwidth < 0:
