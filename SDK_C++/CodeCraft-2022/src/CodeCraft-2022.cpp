@@ -11,8 +11,8 @@
 
 using namespace std;
 
-const string input_path = "../../../data/";
-const string output_path = "../../../output/solution.txt";
+const string input_path = "/data/";
+const string output_path = "/output/solution.txt";
 
 int timestamps = 0;
 int site_number = 0;
@@ -260,7 +260,7 @@ int main(){
             //cout<<"dealing with client"<<client;
             solution << client <<":";
             if(demand[client][t] == 0){
-                solution<<"\n";
+                solution<<endl;
                 continue;
             }
             
@@ -299,20 +299,23 @@ int main(){
                     cout<<" No feasible solution"<<endl;
                 }
             }
+            int flag = 0;
             for(int k = 0; k < site4client[client].size(); k++){
                 string site = site4client[client][k];
                 int assigned_bw = site_current_bw[site] - site_remaining[site];
                 site_current_bw[site] = site_remaining[site];
                 if(assigned_bw != 0){
+                    if (flag == 0){
+                        flag = 1;
+                    }
+                    else{
+                        solution<<",";
+                    }
                     if(assigned_bw < 0){
                         cout<<"error";
                     }
-                    if(k == site4client[client].size()-1){
-                        solution << "<" << site << "," << assigned_bw << ">";
-                    }
-                    else{
-                        solution<< "<" << site << "," << assigned_bw << ">,";
-                    }
+                    solution << "<" << site << "," << assigned_bw << ">";
+                    
                 }
                 else{
                     cout<<"zero assigned bw, ts="<<t<<"client="<<client<<endl;
