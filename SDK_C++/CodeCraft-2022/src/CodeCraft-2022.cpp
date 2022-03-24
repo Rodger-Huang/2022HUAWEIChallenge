@@ -251,9 +251,10 @@ int main(){
         site_client_number.insert(make_pair(it->first, it->second.size()));
     }
 
-    //cout<<"timestamp="<<timestamps<<" client num="<<client_number<<" site_num="<<site_number<<endl;
+    cout<<"timestamp="<<timestamps<<" client num="<<client_number<<" site_num="<<site_number<<endl;
     //注意：可以通过，demand[client][t]获取客户在t时刻的总需求
     //通过 site_bandwidth[site]获取站点的总带宽
+    int line_count = 0;
     for(int t = 0; t < timestamps; t++){
         map<string, int> client_reamaining;
         map<string, int> site_remaining = site_bandwidth;
@@ -267,39 +268,58 @@ int main(){
             string client = client_order[co].first;
             //cout<<"dealing with client"<<client;
             solution << client <<":";
+            line_count++;
             if(demand[client][t] == 0){
-                solution<<"\n";
+                solution << "\n";
                 continue;
             }
             
             while(client_reamaining[client] > 0){
-                //cout<<"client remaining demand=" << client_reamaining[client]<<endl;
+                
+                //cout<<endl<<"client remaining demand=" << client_reamaining[client]<<endl;
                 vector<string> actual_site = site4client[client];
                 //cout<<"size actual site="<<actual_site.size();
-                int average_bandwidth = ceil(client_reamaining[client] / actual_site.size());
+                int average_bandwidth = int(ceil(float(client_reamaining[client]) / actual_site.size()));
+                //cout<<"average bandwidth="<<average_bandwidth<<endl;
                 for(auto it = actual_site.begin(); it != actual_site.end();){
                     string site = (*it);
-                    //cout<<"checking site"<<site;
+                    //cout<<"checking site "<<site <<" ";
+                    if(client_reamaining[client] == 0)
+                        break;
+                    else if(client_reamaining[client] < 0)
+                        cout<<"ERROR!"<<endl;
+
                     if(site_remaining[site] >= average_bandwidth){
-                        //cout<<"got bandwidth="<<average_bandwidth<<" from site="<<site;
+                        // int allocate_bandwidth = 0;
+                        // if(client_reamaining[client] >= average_bandwidth)
+                        //     allocate_bandwidth = average_bandwidth;
+                        // else
+                        //     allocate_bandwidth = client_reamaining[client];
+                        // //cout<<"got bandwidth="<<allocate_bandwidth<<" from site="<<site<<endl;
+                        // client_reamaining[client] -= allocate_bandwidth;
+                        // site_remaining[site] -= allocate_bandwidth;
                         client_reamaining[client] -= average_bandwidth;
                         site_remaining[site] -= average_bandwidth;
-                        if (client_reamaining[client] < 0){
-                            site_remaining[site] += (0 - client_reamaining[client]);
-                            client_reamaining[client] = 0;
+                        if (client_reamaining[client] <= 0){
+                            site_remaining[site] += (0-client_reamaining[client]);
                             break;
                         }
+
                         it++;
                     }
                     else{
-                        it = actual_site.erase(it);
+                        actual_site.erase(it);
+                        //cout<<"delete site"<<site<<endl;
                     }
                 }
                 if(actual_site.size() == 0){
                     cout<<" No feasible solution"<<endl;
                 }
             }
+            int count = 0;
+            int writed_site_count = 0;
             for(int k = 0; k < site4client[client].size(); k++){
+                count++;
                 string site = site4client[client][k];
                 int assigned_bw = site_current_bw[site] - site_remaining[site];
                 site_current_bw[site] = site_remaining[site];
@@ -307,17 +327,48 @@ int main(){
                     if(assigned_bw < 0){
                         cout<<"error";
                     }
-                    if(k == site4client[client].size()-1){
-                        solution << "<" << site << "," << assigned_bw << ">";
+                    if (count < int(site4client[client].size())){
+                        if (writed_site_count == 0){
+                            solution << "<" << site << "," << assigned_bw << ">";
+                            writed_site_count++;
+                        }else if (writed_site_count > 0){
+                            solution << ",<" << site << "," << assigned_bw << ">";
+                            writed_site_count++;
+                        }
+                    }else{
+                        if (writed_site_count == 0){
+                            if (line_count != timestamps*int(client_order.size())){
+                                solution << "<" << site << "," << assigned_bw << ">\n";
+                            }else{
+                                solution << "<" << site << "," << assigned_bw << ">";
+                            }
+                            
+                        }else{
+                            if (line_count != timestamps*int(client_order.size())){
+                                solution << ",<" << site << "," << assigned_bw << ">" << endl;
+                            }else{
+                                solution << ",<" << site << "," << assigned_bw << ">";
+                            }
+                        }
                     }
-                    else{
-                        solution<< "<" << site << "," << assigned_bw << ">,";
+                    // if(k == site4client[client].size()-1){
+                    //     solution << "<" << site << "," << assigned_bw << ">";
+                    // }
+                    // else{
+                    //     solution<< "<" << site << "," << assigned_bw << ">,";
+                    // }
+                }
+                else{
+                    // cout<<"zero assigned bw, ts="<<t<<"client="<<client<<endl;
+                    if((count == int(site4client[client].size())) && (line_count != timestamps * int(client_order.size()))){
+                        solution << endl;
                     }
                 }
             }
-            if(t != timestamps - 1 || co != client_order.size()-1){
-                solution << endl;
-            }
+            //solution<<endl<<t;
+            // if(t != timestamps - 1 || co != client_order.size()-1){
+            //     solution << endl;
+            // }
         }
     }
 
