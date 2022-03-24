@@ -11,8 +11,8 @@
 
 using namespace std;
 
-const string input_path = "/data/";
-const string output_path = "/output/solution.txt";
+const string input_path = "../../../data/";
+const string output_path = "../../../output/solution.txt";
 
 int timestamps = 0;
 int site_number = 0;
@@ -243,7 +243,7 @@ int main(){
         site_client_number.insert(make_pair(it->first, it->second.size()));
     }
 
-    //cout<<"timestamp="<<timestamps<<" client num="<<client_number<<" site_num="<<site_number<<endl;
+    cout<<"timestamp="<<timestamps<<" client num="<<client_number<<" site_num="<<site_number<<endl;
     //注意：可以通过，demand[client][t]获取客户在t时刻的总需求
     //通过 site_bandwidth[site]获取站点的总带宽
     for(int t = 0; t < timestamps; t++){
@@ -307,8 +307,12 @@ int main(){
                         solution<< "<" << site << "," << assigned_bw << ">,";
                     }
                 }
+                else{
+                    cout<<"zero assigned bw, ts="<<t<<"client="<<client<<endl;
+                }
             }
-            if(t != timestamps - 1 && co != client_order.size()-1){
+            //solution<<endl<<t;
+            if(t != timestamps - 1 || co != client_order.size()-1){
                 solution << endl;
             }
         }

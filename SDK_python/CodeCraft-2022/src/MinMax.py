@@ -3,14 +3,12 @@ import math
 import sys
 import os
 
-from numpy import average
-
 
 output_path = "../solutions/output/solution.txt"
 
 def getSiteBandwidth():
     site_bandwidth = {}
-    with open("../../data/site_bandwidth.csv") as f:
+    with open("../../../data/site_bandwidth.csv") as f:
         f_csv = csv.reader(f)
         headers = next(f_csv)
         for row in f_csv:
@@ -19,13 +17,13 @@ def getSiteBandwidth():
     return site_bandwidth, N
 
 def getQoSConstraint():
-    with open("../../data/config.ini", mode='r') as f:
+    with open("../../../data/config.ini", mode='r') as f:
         qos_constraint = int(f.readlines()[1].split("=")[-1])
     return qos_constraint
 
 def getQoS():
     qos = {}
-    with open("../../data/qos.csv") as f:
+    with open("../../../data/qos.csv") as f:
         f_csv = csv.reader(f)
         headers = next(f_csv)
         M = len(headers) - 1
@@ -36,7 +34,7 @@ def getQoS():
 
 def getDemand():
     demand = {}
-    with open("../../data/demand.csv") as f:
+    with open("../../../data/demand.csv") as f:
         f_csv = csv.reader(f)
         headers = next(f_csv)
         M = len(headers) - 1 # M client
