@@ -263,29 +263,36 @@ int main(){
                 solution<<"\n";
                 continue;
             }
-            int test = 0;
-            while(client_reamaining[client] > 0 && test < 5){
-                test++;
-                //cout<<"client remaining demand=" << client_reamaining[client]<<endl;
+            
+            while(client_reamaining[client] > 0){
+                
+                //cout<<endl<<"client remaining demand=" << client_reamaining[client]<<endl;
                 vector<string> actual_site = site4client[client];
                 //cout<<"size actual site="<<actual_site.size();
-                int average_bandwidth = ceil(client_reamaining[client] / actual_site.size());
+                int average_bandwidth = int(ceil(float(client_reamaining[client]) / actual_site.size()));
+                //cout<<"average bandwidth="<<average_bandwidth<<endl;
                 for(auto it = actual_site.begin(); it != actual_site.end();){
                     string site = (*it);
-                    //cout<<"checking site"<<site;
+                    //cout<<"checking site "<<site <<" ";
+                    if(client_reamaining[client] == 0)
+                        break;
+                    else if(client_reamaining[client] < 0)
+                        cout<<"ERROR!"<<endl;
+
                     if(site_remaining[site] >= average_bandwidth){
-                        //cout<<"got bandwidth="<<average_bandwidth<<" from site="<<site;
-                        client_reamaining[client] -= average_bandwidth;
-                        site_remaining[site] -= average_bandwidth;
-                        if (client_reamaining[client] < 0){
-                            site_remaining[site] += (0 - client_reamaining[client]);
-                            client_reamaining[client] = 0;
-                            break;
-                        }
+                        int allocate_bandwidth = 0;
+                        if(client_reamaining[client] >= average_bandwidth)
+                            allocate_bandwidth = average_bandwidth;
+                        else
+                            allocate_bandwidth = client_reamaining[client];
+                        //cout<<"got bandwidth="<<allocate_bandwidth<<" from site="<<site<<endl;
+                        client_reamaining[client] -= allocate_bandwidth;
+                        site_remaining[site] -= allocate_bandwidth;
                         it++;
                     }
                     else{
                         it = actual_site.erase(it);
+                        //cout<<"delete site"<<site<<endl;
                     }
                 }
                 if(actual_site.size() == 0){
