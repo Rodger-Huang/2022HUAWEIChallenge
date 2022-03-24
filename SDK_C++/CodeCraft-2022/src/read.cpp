@@ -34,6 +34,7 @@ map<string, int> getSiteBandwidth(){
     fin.close()
     return result;
 }
+
 int getConstraint(){
     ifstream fconfig;
     fconfig.open("data/config.ini");
@@ -56,6 +57,7 @@ int getConstraint(){
         cout<<"qos constraint(int):"<<qos_constraint<<endl;
     return qos_constraint;
 }
+
 int main(){
     int qos_constraint = getConstraint();
     map<string,int> site_bandwidth = getSiteBandwidth();

@@ -11,8 +11,13 @@
 
 using namespace std;
 
-const string input_path = "/data/";
-const string output_path = "/output/solution.txt";
+// 测试用
+const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
+const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+
+// 提交用
+// const string input_path = "/data/";
+// const string output_path = "/output/solution.txt";
 
 int timestamps = 0;
 int site_number = 0;
@@ -79,6 +84,7 @@ map<string, vector<int>> getDemand(){
     vector<string> client_name_list;
     string header;
     getline(fdemand, header);
+    header.pop_back();
     istringstream readheader(header);
     string client_name;
     getline(readheader, client_name, ',');
@@ -99,7 +105,7 @@ map<string, vector<int>> getDemand(){
         while(getline(demand_data, detail_demand, ',')){
             result[client_name_list[i++]].push_back(atoi(detail_demand.c_str()));
         }
-    }   
+    }
     fdemand.close();
     if(CHECK_DATA){
         for (auto it = result.begin(); it != result.end(); it++){
@@ -124,6 +130,7 @@ map<pair<string,string>, int> getQoS(){
     vector<string> client_name_list;
     string header;
     getline(fQoS, header);
+    header.pop_back();
     istringstream readHeader(header);
     string client_name;
     getline(readHeader,client_name,',');
@@ -213,6 +220,7 @@ map<string, vector<string>> getClientForSite(){
 bool cmp(pair<string, int> a, pair<string, int> b){
     return a.second > b.second;
 }
+
 int main(){
     ofstream solution;
     solution.open(output_path);
@@ -263,9 +271,8 @@ int main(){
                 solution<<"\n";
                 continue;
             }
-            int test = 0;
-            while(client_reamaining[client] > 0 && test < 5){
-                test++;
+            
+            while(client_reamaining[client] > 0){
                 //cout<<"client remaining demand=" << client_reamaining[client]<<endl;
                 vector<string> actual_site = site4client[client];
                 //cout<<"size actual site="<<actual_site.size();
@@ -308,7 +315,7 @@ int main(){
                     }
                 }
             }
-            if(t != timestamps - 1 && co != client_order.size()-1){
+            if(t != timestamps - 1 || co != client_order.size()-1){
                 solution << endl;
             }
         }
