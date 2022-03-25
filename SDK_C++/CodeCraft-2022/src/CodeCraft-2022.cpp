@@ -13,11 +13,11 @@
 using namespace std;
 
 // 测试用
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
-// const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
-
-const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/simulated_data/";
+const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
 const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+
+// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/simulated_data/";
+// const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
 
 // 提交用
 // const string input_path = "/data/";
@@ -407,29 +407,30 @@ int main(){
     }
     int line_count = 0;
     for(int t = 0; t < timestamps; t++){
-        for(auto client = demand.begin(); client != demand.end(); client++){
-            solution << client->first <<":";
+        for(auto cl = demand.begin(); cl != demand.end(); cl++){
+            string client = cl->first;
+            solution << client <<":";
             line_count++;
-            if(demand[client->first][t] == 0){
+            if(demand[client][t] == 0){
                 solution << "\n";
                 continue;
             }
             int count = 0;
             int writed_site_count = 0;
-            for(int k = 0; k < site4client[client->first].size(); k++){
+            for(int k = 0; k < site4client[client].size(); k++){
                 count++;
-                string site = site4client[client->first][k];
+                string site = site4client[client][k];
                 // int assigned_bw = site_current_bw[site] - site_remaining[site];
                 // site_current_bw[site] = site_remaining[site];
                 int assigned_bw = 0;
-                if(site_t[site][t].find(client->first) != site_t[site][t].end()){
-                    assigned_bw = site_t[site][t][client->first];
+                if(site_t[site][t].find(client) != site_t[site][t].end()){
+                    assigned_bw = site_t[site][t][client];
                 }
                 if(assigned_bw != 0){
                     if(assigned_bw < 0){
                         cout << "error";
                     }
-                    if (count < int(site4client[client->first].size())){
+                    if (count < int(site4client[client].size())){
                         if (writed_site_count == 0){
                             solution << "<" << site << "," << assigned_bw << ">";
                             writed_site_count++;
@@ -447,18 +448,16 @@ int main(){
                             
                         }else{
                             if (line_count != timestamps*int(client_order.size())){
-                                solution << ",<" << site << "," << assigned_bw << ">" << endl;
+                                solution << ",<" << site << "," << assigned_bw << ">\n";
                             }else{
                                 solution << ",<" << site << "," << assigned_bw << ">";
                             }
                         }
                     }
-                    solution << "<" << site << "," << assigned_bw << ">";
-                    
                 }
                 else{
-                    if((count == int(site4client[client->first].size())) && (line_count != timestamps * int(client_order.size()))){
-                        solution << endl;
+                    if((count == int(site4client[client].size())) && (line_count != timestamps * int(client_order.size()))){
+                        solution << "\n";
                     }
                 }
             }
