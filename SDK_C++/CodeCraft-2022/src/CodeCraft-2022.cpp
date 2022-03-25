@@ -13,15 +13,15 @@
 using namespace std;
 
 // 测试用
-const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
-const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
+// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/pressure_data/";
+// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/simulated_data/";
 
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/simulated_data/";
 // const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
 
 // 提交用
-// const string input_path = "/data/";
-// const string output_path = "/output/solution.txt";
+const string input_path = "/data/";
+const string output_path = "/output/solution.txt";
 
 int timestamps = 0;
 int site_number = 0;
@@ -90,7 +90,10 @@ map<string, vector<int>> getDemand(){
     vector<string> client_name_list;
     string header;
     getline(fdemand, header);
-    header.pop_back();
+    size_t n = header.find_last_not_of("\r\n\t");
+    if(n != string::npos){
+        header.erase(n+1, header.size() - n);
+    }
     istringstream readheader(header);
     string client_name;
     getline(readheader, client_name, ',');
@@ -137,7 +140,10 @@ map<pair<string,string>, int> getQoS(){
     vector<string> client_name_list;
     string header;
     getline(fQoS, header);
-    header.pop_back();
+    size_t n = header.find_last_not_of("\r\n\t");
+    if(n != string::npos){
+        header.erase(n+1, header.size() - n);
+    }
     istringstream readHeader(header);
     string client_name;
     getline(readHeader,client_name,',');
@@ -292,13 +298,13 @@ int main(){
             client_reamaining.insert(make_pair(it->first, it->second[t]));
         }
 
-        for(int co = 0; co < client_order.size(); co++){
-            string client = client_order[co].first;
+        for(auto co = client_order.begin(); co != client_order.end(); co++){
+            string client = co->first;
             while(client_reamaining[client] > 0){
                 vector<string> actual_site = site4client[client];
                 int average_bandwidth = int(ceil(float(client_reamaining[client]) / actual_site.size()));
-                for(auto it = actual_site.begin(); it != actual_site.end(); it++){
-                    string site = (*it);
+                for(auto si = actual_site.begin(); si != actual_site.end(); si++){
+                    string site = *si;
                     if(client_reamaining[client] == 0)
                         break;
                     else if(client_reamaining[client] < 0)
@@ -311,17 +317,15 @@ int main(){
                             site_remaining[site] += (0-client_reamaining[client]);
                             break;
                         }
-
-                    }else{
-                        actual_site.erase(it);
                     }
-                }
-                if(actual_site.size() == 0){
-                    cout<<" No feasible solution"<<endl;
+                    // erase操作会使得for循环到一个已经删除的内存位置，导致出错
+                    // else{
+                    //     actual_site.erase(si);
+                    // }
                 }
             }
-            for(int k = 0; k < site4client[client].size(); k++){
-                string site = site4client[client][k];
+            for(auto si = site4client[client].begin(); si != site4client[client].end(); si++){
+                string site = *si;
                 int assigned_bw = site_current_bw[site] - site_remaining[site];
                 site_current_bw[site] = site_remaining[site];
                 site_t_client[site][client] = assigned_bw;
@@ -338,14 +342,16 @@ int main(){
     // 尽可能塞满每一个边缘节点：超过95%的节点就尽量塞到上限，低于95%的节点就尽量塞到95%
     // 记录处理过的节点，避免移入节点的流量在后续操作其他节点时又流出
     set<string> site_processed;
+    // map<string, int> site_processed;
     int position_95 = int(ceil(timestamps * 0.95) - 1);
     // for (auto site = site_bandwidth.begin(); site != site_bandwidth.end(); site++){
     for(auto si = site_order.rbegin(); si != site_order.rend(); si++){
         string site = si->first;
         site_processed.insert(site);
+        // site_processed[site] = 1;
         vector<int> index = argsort(site_t_usage[site]);
         int value_95 = site_t_usage[site][index[position_95]];
-        for(int position = 0; position < index.size(); position++){
+        for(int position = 0; position < int(index.size()); position++){
             int t = index[position];
             int left = 0;
             if(position <= position_95){
@@ -385,9 +391,7 @@ int main(){
                     }
                     if(site_processed.find(*site_client) == site_processed.end() && site_t[*site_client][t].find(*client) != site_t[*site_client][t].end()){
                         int move_flow = min(left, site_t[*site_client][t][*client]);
-                        // if(site_t[site][t].find(*client) != site_t[site][t].end()){
                         site_t[site][t][*client] += move_flow;
-                        // }
                         site_t_usage[site][t] += move_flow;
                         site_t[*site_client][t][*client] -= move_flow;
                         site_t_usage[*site_client][t] -= move_flow;
@@ -395,7 +399,6 @@ int main(){
                     }
                 }
             }
-            // }
         }
     }
 
@@ -403,7 +406,7 @@ int main(){
     ofstream solution;
     solution.open(output_path);
     if(!solution.is_open()){
-        std:cerr<<"failed to open "<<output_path;
+        std:cerr << "failed to open " << output_path;
     }
     int line_count = 0;
     for(int t = 0; t < timestamps; t++){
@@ -417,11 +420,9 @@ int main(){
             }
             int count = 0;
             int writed_site_count = 0;
-            for(int k = 0; k < site4client[client].size(); k++){
+            for(auto si = site4client[client].begin(); si != site4client[client].end(); si++){
                 count++;
-                string site = site4client[client][k];
-                // int assigned_bw = site_current_bw[site] - site_remaining[site];
-                // site_current_bw[site] = site_remaining[site];
+                string site = *si;
                 int assigned_bw = 0;
                 if(site_t[site][t].find(client) != site_t[site][t].end()){
                     assigned_bw = site_t[site][t][client];

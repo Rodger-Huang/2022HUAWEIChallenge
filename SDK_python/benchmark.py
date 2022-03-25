@@ -20,7 +20,7 @@ cname_map = {}
 sname_map = {}
 
 class IOFile():
-    path_prefix = 'simulated_data'
+    path_prefix = 'CodeCraft2022-PressureGenerator/pressure_data'
     demand = path_prefix + '/demand.csv'
     qos = path_prefix + '/qos.csv'
     bandwidth = path_prefix + '/site_bandwidth.csv'
