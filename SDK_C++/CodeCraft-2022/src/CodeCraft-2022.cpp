@@ -320,7 +320,6 @@ int main(){
                     cout<<" No feasible solution"<<endl;
                 }
             }
-
             for(int k = 0; k < site4client[client].size(); k++){
                 string site = site4client[client][k];
                 int assigned_bw = site_current_bw[site] - site_remaining[site];
@@ -454,6 +453,8 @@ int main(){
                             }
                         }
                     }
+                    solution << "<" << site << "," << assigned_bw << ">";
+                    
                 }
                 else{
                     if((count == int(site4client[client->first].size())) && (line_count != timestamps * int(client_order.size()))){
