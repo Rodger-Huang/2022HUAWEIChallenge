@@ -238,7 +238,7 @@ if __name__=='__main__':
                         site_t[site_client]['usage'][t] -= move_flow
                         left -= move_flow
 
-    # 输出答案
+    # 输出结果
     for t in range(timestamps):
         for client in [x[0] for x in client_info_order]:
             line_count += 1

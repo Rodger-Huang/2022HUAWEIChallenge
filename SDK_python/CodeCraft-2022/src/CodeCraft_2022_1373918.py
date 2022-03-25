@@ -5,8 +5,8 @@ import os
 import os.path as osp
 
 # NOTE 提交前记得修改路径
-input_path = "../../../data/"
-output_path = "../solutions/output/solution.txt"
+input_path = "data/"
+output_path = "output/solution.txt"
 
 def getSiteBandwidth():
     site_bandwidth = {}

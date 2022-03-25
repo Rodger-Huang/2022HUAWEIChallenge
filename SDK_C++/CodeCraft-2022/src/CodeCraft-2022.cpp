@@ -7,12 +7,16 @@
 #include<algorithm>
 #include<cmath>
 #include<typeinfo>
+#include<set>
 #define CHECK_DATA 0
 
 using namespace std;
 
 // 测试用
-const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
+// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
+// const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+
+const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/simulated_data/";
 const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
 
 // 提交用
@@ -31,12 +35,12 @@ map<string, int> getSiteBandwidth(){
         std::cerr<<"failed to open "<<input_path<< "site_bandwidth.csv.";
     }
     string header;
-    getline(fin,header);
+    getline(fin, header);
     string site_bandwidth_info;
     int bandwidth;
     string site_name;
     string bandwidth_str;
-    while(getline(fin,site_bandwidth_info)){
+    while(getline(fin, site_bandwidth_info)){
         site_number++;
         istringstream readline(site_bandwidth_info);
         getline(readline,site_name,',');
@@ -50,6 +54,7 @@ map<string, int> getSiteBandwidth(){
     fin.close();
     return result;
 }
+
 int getConstraint(){
     ifstream fconfig;
     string target_file = input_path + "config.ini";
@@ -73,6 +78,7 @@ int getConstraint(){
         cout<<"qos constraint(int):"<<qos_constraint<<endl;
     return qos_constraint;
 }
+
 map<string, vector<int>> getDemand(){
     map<string, vector<int>> result;
     ifstream fdemand;
@@ -119,6 +125,7 @@ map<string, vector<int>> getDemand(){
 
     return result;
 }
+
 map<pair<string,string>, int> getQoS(){
     map<pair<string,string>, int> result;
     ifstream fQoS;
@@ -157,7 +164,8 @@ map<pair<string,string>, int> getQoS(){
     }
     return result;
 }
-//client->[site1,site2,...]
+
+// client->[site1,site2,...]
 map<string, vector<string>> getSiteForClient(){
     map<string, vector<string>> result;
     map<pair<string,string>, int> qos = getQoS();
@@ -217,19 +225,28 @@ map<string, vector<string>> getClientForSite(){
     }
     return result;
 }
+
 bool cmp(pair<string, int> a, pair<string, int> b){
     return a.second > b.second;
 }
 
-int main(){
-    ofstream solution;
-    solution.open(output_path);
-    if(!solution.is_open()){
-        std:cerr<<"failed to open "<<output_path;
-    }
+// 实现argsort功能
+template<typename T> vector<int> argsort(const vector<T>& array)
+{
+	const int array_len(array.size());
+	vector<int> array_index(array_len, 0);
+	for (int i = 0; i < array_len; ++i)
+		array_index[i] = i;
 
+	sort(array_index.begin(), array_index.end(),
+		[&array](int pos1, int pos2) {return (array[pos1] < array[pos2]);});
+
+	return array_index;
+}
+
+int main(){
     int qos_constraint = getConstraint();
-    map<string,int> site_bandwidth = getSiteBandwidth();
+    map<string, int> site_bandwidth = getSiteBandwidth();
     map<string, vector<int>> demand = getDemand();
     
     map<string, vector<string>> site4client = getSiteForClient();
@@ -238,66 +255,56 @@ int main(){
     map<string, int> client_site_number;
     map<string, int> site_client_number;
 
-    //sort client by site number
-    vector<pair<string,int>> client_order;
+    // sort client by site number
+    vector<pair<string, int>> client_order;
+    vector<pair<string, int>> site_order;
 
     for(auto it = site4client.begin(); it != site4client.end(); it++){
         client_site_number.insert(make_pair(it->first, it->second.size()));
         client_order.push_back(make_pair(it->first, it->second.size()));
     }
     sort(client_order.begin(), client_order.end(), cmp);
+    // 对节点根据客户数量从少到多进行排序，少客户的节点有更大概率95%值比较小
+    for(auto it = site_bandwidth.begin(); it != site_bandwidth.end(); it++){
+        string site = it->first;
+        if(client4site.find(site) != client4site.end()){
+            site_order.push_back(make_pair(it->first, client4site[site].size()));
+        }else{
+            site_order.push_back(make_pair(it->first, 0));
+        }
+    }
+    sort(site_order.begin(), site_order.end(), cmp);
 
     for(auto it = client4site.begin(); it != client4site.end(); it++){
         site_client_number.insert(make_pair(it->first, it->second.size()));
     }
 
-    cout<<"timestamp="<<timestamps<<" client num="<<client_number<<" site_num="<<site_number<<endl;
     //注意：可以通过，demand[client][t]获取客户在t时刻的总需求
     //通过 site_bandwidth[site]获取站点的总带宽
-    int line_count = 0;
+    map<string, vector<map<string, int>>> site_t;
+    map<string, vector<int>> site_t_usage;
     for(int t = 0; t < timestamps; t++){
         map<string, int> client_reamaining;
         map<string, int> site_remaining = site_bandwidth;
         map<string, int> site_current_bw = site_bandwidth;
-
+        map<string, map<string, int>> site_t_client;
         for(auto it = demand.begin(); it != demand.end(); it++){
             client_reamaining.insert(make_pair(it->first, it->second[t]));
         }
 
         for(int co = 0; co < client_order.size(); co++){
             string client = client_order[co].first;
-            //cout<<"dealing with client"<<client;
-            solution << client <<":";
-            line_count++;
-            if(demand[client][t] == 0){
-                solution << "\n";
-                continue;
-            }
-            
             while(client_reamaining[client] > 0){
-                
-                //cout<<endl<<"client remaining demand=" << client_reamaining[client]<<endl;
                 vector<string> actual_site = site4client[client];
-                //cout<<"size actual site="<<actual_site.size();
                 int average_bandwidth = int(ceil(float(client_reamaining[client]) / actual_site.size()));
-                //cout<<"average bandwidth="<<average_bandwidth<<endl;
-                for(auto it = actual_site.begin(); it != actual_site.end();){
+                for(auto it = actual_site.begin(); it != actual_site.end(); it++){
                     string site = (*it);
-                    //cout<<"checking site "<<site <<" ";
                     if(client_reamaining[client] == 0)
                         break;
                     else if(client_reamaining[client] < 0)
                         cout<<"ERROR!"<<endl;
 
                     if(site_remaining[site] >= average_bandwidth){
-                        // int allocate_bandwidth = 0;
-                        // if(client_reamaining[client] >= average_bandwidth)
-                        //     allocate_bandwidth = average_bandwidth;
-                        // else
-                        //     allocate_bandwidth = client_reamaining[client];
-                        // //cout<<"got bandwidth="<<allocate_bandwidth<<" from site="<<site<<endl;
-                        // client_reamaining[client] -= allocate_bandwidth;
-                        // site_remaining[site] -= allocate_bandwidth;
                         client_reamaining[client] -= average_bandwidth;
                         site_remaining[site] -= average_bandwidth;
                         if (client_reamaining[client] <= 0){
@@ -305,29 +312,125 @@ int main(){
                             break;
                         }
 
-                        it++;
-                    }
-                    else{
+                    }else{
                         actual_site.erase(it);
-                        //cout<<"delete site"<<site<<endl;
                     }
                 }
                 if(actual_site.size() == 0){
                     cout<<" No feasible solution"<<endl;
                 }
             }
-            int count = 0;
-            int writed_site_count = 0;
+
             for(int k = 0; k < site4client[client].size(); k++){
-                count++;
                 string site = site4client[client][k];
                 int assigned_bw = site_current_bw[site] - site_remaining[site];
                 site_current_bw[site] = site_remaining[site];
+                site_t_client[site][client] = assigned_bw;
+                site_t_client[site]["usage"] += assigned_bw;
+            }
+        }
+
+        for(auto it = site_bandwidth.begin(); it != site_bandwidth.end(); it++){
+            site_t[it->first].push_back(site_t_client[it->first]);
+            site_t_usage[it->first].push_back(site_t_client[it->first]["usage"]);
+        }
+    }
+
+    // 尽可能塞满每一个边缘节点：超过95%的节点就尽量塞到上限，低于95%的节点就尽量塞到95%
+    // 记录处理过的节点，避免移入节点的流量在后续操作其他节点时又流出
+    set<string> site_processed;
+    int position_95 = int(ceil(timestamps * 0.95) - 1);
+    // for (auto site = site_bandwidth.begin(); site != site_bandwidth.end(); site++){
+    for(auto si = site_order.rbegin(); si != site_order.rend(); si++){
+        string site = si->first;
+        site_processed.insert(site);
+        vector<int> index = argsort(site_t_usage[site]);
+        int value_95 = site_t_usage[site][index[position_95]];
+        for(int position = 0; position < index.size(); position++){
+            int t = index[position];
+            int left = 0;
+            if(position <= position_95){
+                left = value_95 - site_t_usage[site][t];
+
+                // left = site_t_usage[site->first][t];
+                // if(left <= 0){
+                //     continue;
+                // }
+                // for(auto client = client4site[site->first].begin(); client != client4site[site->first].end(); client++){
+                //     for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
+                //         if(left <= 0){
+                //             break;
+                //         }
+                //         if(site_processed.find(*site_client) != site_processed.end() && site_t[site->first][t].find(*client) != site_t[site->first][t].end()){
+                //             int move_flow = min(site_t[site->first][t][*client], site_bandwidth[*site_client] - site_t_usage[*site_client][t]);
+                //             // if(site_t[site][t].find(*client) != site_t[site][t].end()){
+                //             site_t[*site_client][t][*client] += move_flow;
+                //             // }
+                //             site_t_usage[*site_client][t] += move_flow;
+                //             site_t[site->first][t][*client] -= move_flow;
+                //             site_t_usage[site->first][t] -= move_flow;
+                //             left -= move_flow;
+                //         }
+                //     }
+                // }
+            }else{
+                left = site_bandwidth[site] - site_t_usage[site][t];
+            }
+            if(left <= 0){
+                continue;
+            }
+            for(auto client = client4site[site].begin(); client != client4site[site].end(); client++){
+                for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
+                    if(left <= 0){
+                        break;
+                    }
+                    if(site_processed.find(*site_client) == site_processed.end() && site_t[*site_client][t].find(*client) != site_t[*site_client][t].end()){
+                        int move_flow = min(left, site_t[*site_client][t][*client]);
+                        // if(site_t[site][t].find(*client) != site_t[site][t].end()){
+                        site_t[site][t][*client] += move_flow;
+                        // }
+                        site_t_usage[site][t] += move_flow;
+                        site_t[*site_client][t][*client] -= move_flow;
+                        site_t_usage[*site_client][t] -= move_flow;
+                        left -= move_flow;
+                    }
+                }
+            }
+            // }
+        }
+    }
+
+    // 输出结果
+    ofstream solution;
+    solution.open(output_path);
+    if(!solution.is_open()){
+        std:cerr<<"failed to open "<<output_path;
+    }
+    int line_count = 0;
+    for(int t = 0; t < timestamps; t++){
+        for(auto client = demand.begin(); client != demand.end(); client++){
+            solution << client->first <<":";
+            line_count++;
+            if(demand[client->first][t] == 0){
+                solution << "\n";
+                continue;
+            }
+            int count = 0;
+            int writed_site_count = 0;
+            for(int k = 0; k < site4client[client->first].size(); k++){
+                count++;
+                string site = site4client[client->first][k];
+                // int assigned_bw = site_current_bw[site] - site_remaining[site];
+                // site_current_bw[site] = site_remaining[site];
+                int assigned_bw = 0;
+                if(site_t[site][t].find(client->first) != site_t[site][t].end()){
+                    assigned_bw = site_t[site][t][client->first];
+                }
                 if(assigned_bw != 0){
                     if(assigned_bw < 0){
-                        cout<<"error";
+                        cout << "error";
                     }
-                    if (count < int(site4client[client].size())){
+                    if (count < int(site4client[client->first].size())){
                         if (writed_site_count == 0){
                             solution << "<" << site << "," << assigned_bw << ">";
                             writed_site_count++;
@@ -351,27 +454,15 @@ int main(){
                             }
                         }
                     }
-                    // if(k == site4client[client].size()-1){
-                    //     solution << "<" << site << "," << assigned_bw << ">";
-                    // }
-                    // else{
-                    //     solution<< "<" << site << "," << assigned_bw << ">,";
-                    // }
                 }
                 else{
-                    // cout<<"zero assigned bw, ts="<<t<<"client="<<client<<endl;
-                    if((count == int(site4client[client].size())) && (line_count != timestamps * int(client_order.size()))){
+                    if((count == int(site4client[client->first].size())) && (line_count != timestamps * int(client_order.size()))){
                         solution << endl;
                     }
                 }
             }
-            //solution<<endl<<t;
-            // if(t != timestamps - 1 || co != client_order.size()-1){
-            //     solution << endl;
-            // }
         }
     }
-
     solution.close();
-    
+    return 0;
 }

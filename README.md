@@ -48,3 +48,7 @@ bash SDK_python/CodeCraft_zip.sh
 主要思路：......
 调用说明：......
 
+## 其他有用的库
+1. 测试指标生成：[CodeCraft2022-benchmark](https://github.com/diphosphane/CodeCraft2022-benchmark)
+2. 压测数据生成：[CodeCraft2022-PressureGenerator](https://github.com/diphosphane/CodeCraft2022-PressureGenerator)
+
