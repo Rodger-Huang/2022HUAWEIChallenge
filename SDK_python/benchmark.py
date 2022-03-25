@@ -20,10 +20,11 @@ cname_map = {}
 sname_map = {}
 
 class IOFile():
-    demand = 'data/demand.csv'
-    qos = 'data/qos.csv'
-    bandwidth = 'data/site_bandwidth.csv'
-    config = 'data/config.ini'
+    path_prefix = 'CodeCraft2022-PressureGenerator/pressure_data'
+    demand = path_prefix + '/demand.csv'
+    qos = path_prefix + '/qos.csv'
+    bandwidth = path_prefix + '/site_bandwidth.csv'
+    config = path_prefix + '/config.ini'
     output = 'output/solution.txt'
 
 

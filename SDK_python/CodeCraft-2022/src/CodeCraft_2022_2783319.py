@@ -6,8 +6,8 @@ import os.path as osp
 import numpy as np
 
 # NOTE 提交前记得修改路径
-input_path = "/data"
-output_path = "/output/solution.txt"
+input_path = "data"
+output_path = "output/solution.txt"
 
 def getSiteBandwidth():
     site_bandwidth = {}
@@ -62,31 +62,37 @@ if __name__=='__main__':
 
     # 记录每一个客户可用的边缘节点
     site4client = {}
-    for m in demand.keys():
-        for n in site_bandwidth.keys():
+    for client in demand.keys():
+        for site in site_bandwidth.keys():
             # print(n, m)
             # print(qos[(n, m)])
-            if qos[(n, m)] < qos_constraint:
-                if m not in site4client.keys():
-                    site4client[m] = [n]
+            if qos[(site, client)] < qos_constraint:
+                if client not in site4client.keys():
+                    site4client[client] = [site]
                 else:
-                    site4client[m].append(n)
+                    site4client[client].append(site)
 
     # 每一个边缘节点可以服务的客户
     client4site = {}
-    for n in site_bandwidth.keys():
-        for m in demand.keys():
-            if qos[(n, m)] < qos_constraint:
-                if n not in client4site.keys():
-                    client4site[n] = [m]
-                else:
-                    client4site[n].append(m)
+    for site in site_bandwidth.keys():
+        client4site[site] = []
+        for client in demand.keys():
+            if qos[(site, client)] < qos_constraint:
+                client4site[site].append(client)
     
     line_count = 0
     site_t = {}
     for site in site_bandwidth.keys():
         site_t[site] = {'usage': []}
+    site_list = list(site_bandwidth)
+    interval = math.floor(timestamps * 0.05)
+    cycle = timestamps // interval
     for t in range(timestamps):
+        # 错峰轮流在t时刻尽量填满几个边缘节点
+        # site_full_t = set()
+        # start = t // interval
+        # if start < site_number:
+        #     site_full_t = set(site_list[start::cycle])
         client_info = {}
         for client in list(demand.keys()):
             client_info[client] = [demand[client][t]]
@@ -100,14 +106,20 @@ if __name__=='__main__':
         for site in list(site_bandwidth.keys()):
             site_info[site] = [site_bandwidth[site]]
             site_info[site].append(site_bandwidth[site])
-
+            
         site_allocation = {}
         for site in site_bandwidth.keys():
             site_allocation[site] = {'usage': 0}
         for client in [x[0] for x in client_info_order]:
             while client_info[client][1] > 0:
-                actual_site = list(site4client[client])
-                average_bandwidth = math.ceil(client_info[client][1] /len(actual_site))
+                actual_site = set(site4client[client])
+                # for site2full in (site_full_t & actual_site):
+                #     allocate_bandwidth = min(site_info[site2full][1], client_info[client][1])
+                #     client_info[client][1] -= allocate_bandwidth
+                #     site_info[site2full][1] -= allocate_bandwidth
+                #     actual_site.remove(site2full)
+
+                average_bandwidth = math.ceil(client_info[client][1] / len(actual_site))
                 for site in list(actual_site):
                     if site_info[site][1] >= average_bandwidth:
                         client_info[client][1] -= average_bandwidth
@@ -172,33 +184,61 @@ if __name__=='__main__':
     # 尽可能塞满每一个边缘节点：超过95%的节点就尽量塞到上限，低于95%的节点就尽量塞到95%
     # 记录处理过的节点，避免移入节点的流量在后续操作其他节点时又流出
     site_processed = set()
+    # for site in site_bandwidth.keys():
+    #     site_processed[site] = [t for t in range(timestamps)]
     position_95 = int(math.ceil(timestamps * 0.95) - 1)
-    for site in site_t:
+    position_x = int(math.ceil(timestamps * 0.48) - 1)
+    # 对节点根据客户数量从少到多进行排序，少客户的节点有更大概率95%值比较小
+    site_info_order = sorted(client4site.items(), key=lambda x : len(x[1]))
+    for site, _ in site_info_order:
         site_processed.add(site)
         index = np.argsort(site_t[site]['usage'])
         value_95 = site_t[site]['usage'][index[position_95]]
-        for t in range(timestamps):
-            if np.where(index==t)[0][0] <= position_95:
+        value_x = site_t[site]['usage'][index[position_x]]
+        for position, t in enumerate(index):
+            if position <= position_95:
                 left = value_95 - site_t[site]['usage'][t]
+                # left = value_x - site_t[site]['usage'][t]
 
-            elif np.where(index==t)[0][0] > position_95:
+                # left = site_t[site]['usage'][t]
+                # if left <= 0:
+                #     continue
+                # for client in client4site[site]:
+                #     for site_client in site4client[client]:
+                #         if left <= 0:
+                #             break
+                #         if site_client not in site_processed and client in site_t[site][t].keys():
+                #             move_flow = min(site_t[site][t][client], site_bandwidth[site_client] - site_t[site_client]['usage'][t])
+                #             if client in site_t[site_client][t].keys():
+                #                 site_t[site_client][t][client] += move_flow
+                #             else:
+                #                 site_t[site_client][t][client] = move_flow
+                #             site_t[site_client]['usage'][t] += move_flow
+                #             site_t[site][t][client] -= move_flow
+                #             site_t[site]['usage'][t] -= move_flow
+                #             left -= move_flow
+
+            else:
                 left = site_bandwidth[site] - site_t[site]['usage'][t]
 
-            if site in client4site.keys():
-                for client in client4site[site]:
-                    for site_client in site4client[client]:
-                        if site_client not in site_processed and left > 0 and client in site_t[site_client][t].keys():
-                            move_flow = min(left, site_t[site_client][t][client])
-                            if client in site_t[site][t].keys():
-                                site_t[site][t][client] += move_flow
-                            else:
-                                site_t[site][t][client] = move_flow
-                            site_t[site]['usage'][t] += move_flow
-                            site_t[site_client][t][client] -= move_flow
-                            site_t[site_client]['usage'][t] -= move_flow
-                            left -= move_flow
+            if left <= 0:
+                continue
+            for client in client4site[site]:
+                for site_client in site4client[client]:
+                    if left <= 0:
+                        break
+                    if site_client not in site_processed and client in site_t[site_client][t].keys():
+                        move_flow = min(left, site_t[site_client][t][client])
+                        if client in site_t[site][t].keys():
+                            site_t[site][t][client] += move_flow
+                        else:
+                            site_t[site][t][client] = move_flow
+                        site_t[site]['usage'][t] += move_flow
+                        site_t[site_client][t][client] -= move_flow
+                        site_t[site_client]['usage'][t] -= move_flow
+                        left -= move_flow
 
-    # 输出答案
+    # 输出结果
     for t in range(timestamps):
         for client in [x[0] for x in client_info_order]:
             line_count += 1
@@ -226,11 +266,19 @@ if __name__=='__main__':
                             writed_site_count += 1
                         
                     else:
-                        if line_count != timestamps*len(demand):
-                            solution.write(",<" + site + "," + str(assigned_bandwidth) + ">\n")
+                        if writed_site_count == 0:
+                            if line_count != timestamps*len(demand):
+                                solution.write("<" + site + "," + str(assigned_bandwidth) + ">\n")
+                            
+                            elif line_count == timestamps*len(demand):
+                                solution.write("<" + site + "," + str(assigned_bandwidth) + ">")
                         
-                        elif line_count == timestamps*len(demand):
-                            solution.write(",<" + site + "," + str(assigned_bandwidth) + ">")
+                        else:
+                            if line_count != timestamps*len(demand):
+                                solution.write(",<" + site + "," + str(assigned_bandwidth) + ">\n")
+                            
+                            elif line_count == timestamps*len(demand):
+                                solution.write(",<" + site + "," + str(assigned_bandwidth) + ">")
                 
                 else:
                     if count == len(list(site4client[client])) and line_count != timestamps*len(demand):

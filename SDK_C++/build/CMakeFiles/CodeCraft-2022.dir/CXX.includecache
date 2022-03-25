@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/hadoop/2022HUAWEIChallenge/SDK/SDK_C++/CodeCraft-2022/src/CodeCraft-2022.cpp
+iostream
+-
+fstream
+-
+string
+-
+sstream
+-
+map
+-
+vector
+-
+algorithm
+-
+cmath
+-
+typeinfo
+-
+
