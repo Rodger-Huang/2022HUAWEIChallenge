@@ -340,64 +340,71 @@ int main(){
     }
 
     // 尽可能塞满每一个边缘节点：超过95%的节点就尽量塞到上限，低于95%的节点就尽量塞到95%
-    // 记录处理过的节点，避免移入节点的流量在后续操作其他节点时又流出
-    set<string> site_processed;
-    // map<string, int> site_processed;
     int position_95 = int(ceil(timestamps * 0.95) - 1);
-    // for (auto site = site_bandwidth.begin(); site != site_bandwidth.end(); site++){
-    for(auto si = site_order.rbegin(); si != site_order.rend(); si++){
-        string site = si->first;
-        site_processed.insert(site);
-        // site_processed[site] = 1;
-        vector<int> index = argsort(site_t_usage[site]);
-        int value_95 = site_t_usage[site][index[position_95]];
-        for(int position = 0; position < int(index.size()); position++){
-            int t = index[position];
-            int left = 0;
-            if(position <= position_95){
-                left = value_95 - site_t_usage[site][t];
+    for(int i = 0; i < 2; i++){
+        // 记录处理过的节点，避免移入节点的流量在后续操作其他节点时又流出
+        set<string> site_processed;
+        // for (auto site = site_bandwidth.begin(); site != site_bandwidth.end(); site++){
+        if(i >= 1){
+            // random_shuffle(site_order.begin(), site_order.end());
+            sort(site_order.begin(), site_order.end(), cmp);
+            // reverse(site_order.begin(), site_order.end());
+        }
+        for(auto si = site_order.rbegin(); si != site_order.rend(); si++){
+            string site = si->first;
+            site_processed.insert(site);
+            vector<int> index = argsort(site_t_usage[site]);
+            int value_95 = site_t_usage[site][index[position_95]];
+            si->second = value_95;
+            for(int position = 0; position < int(index.size()); position++){
+                int t = index[position];
+                int left = 0;
+                if(position <= position_95){
+                    left = value_95 - site_t_usage[site][t];
 
-                // left = site_t_usage[site->first][t];
-                // if(left <= 0){
-                //     continue;
-                // }
-                // for(auto client = client4site[site->first].begin(); client != client4site[site->first].end(); client++){
-                //     for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
-                //         if(left <= 0){
-                //             break;
-                //         }
-                //         if(site_processed.find(*site_client) != site_processed.end() && site_t[site->first][t].find(*client) != site_t[site->first][t].end()){
-                //             int move_flow = min(site_t[site->first][t][*client], site_bandwidth[*site_client] - site_t_usage[*site_client][t]);
-                //             // if(site_t[site][t].find(*client) != site_t[site][t].end()){
-                //             site_t[*site_client][t][*client] += move_flow;
-                //             // }
-                //             site_t_usage[*site_client][t] += move_flow;
-                //             site_t[site->first][t][*client] -= move_flow;
-                //             site_t_usage[site->first][t] -= move_flow;
-                //             left -= move_flow;
-                //         }
-                //     }
-                // }
-            }else{
-                left = site_bandwidth[site] - site_t_usage[site][t];
-            }
-            if(left <= 0){
-                continue;
-            }
-            for(auto client = client4site[site].begin(); client != client4site[site].end(); client++){
-                for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
-                    if(left <= 0){
-                        break;
-                    }
-                    if(site_processed.find(*site_client) == site_processed.end() && site_t[*site_client][t].find(*client) != site_t[*site_client][t].end()){
-                        int move_flow = min(left, site_t[*site_client][t][*client]);
-                        site_t[site][t][*client] += move_flow;
-                        site_t_usage[site][t] += move_flow;
-                        site_t[*site_client][t][*client] -= move_flow;
-                        site_t_usage[*site_client][t] -= move_flow;
-                        left -= move_flow;
+                    // left = site_t_usage[site][t];
+                    // if(left <= 0){
+                    //     continue;
+                    // }
+                    // for(auto client = client4site[site].begin(); client != client4site[site].end(); client++){
+                    //     for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
+                    //         if(left <= 0){
+                    //             break;
+                    //         }
+                    //         if(site_processed.find(*site_client) != site_processed.end() && site_t[site][t].find(*client) != site_t[site][t].end()){
+                    //             int move_flow = min(site_t[site][t][*client], site_bandwidth[*site_client] - site_t_usage[*site_client][t]);
+                    //             // if(site_t[site][t].find(*client) != site_t[site][t].end()){
+                    //             site_t[*site_client][t][*client] += move_flow;
+                    //             // }
+                    //             site_t_usage[*site_client][t] += move_flow;
+                    //             site_t[site][t][*client] -= move_flow;
+                    //             site_t_usage[site][t] -= move_flow;
+                    //             left -= move_flow;
+                    //         }
+                    //     }
+                    // }
+                }else{
+                    left = site_bandwidth[site] - site_t_usage[site][t];
+                }
+                if(left <= 0){
+                    continue;
+                }
+                for(auto client = client4site[site].begin(); client != client4site[site].end(); client++){
+                    for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
+                        if(left <= 0){
+                            break;
+                        }
+                        if(site_processed.find(*site_client) == site_processed.end() && site_t[*site_client][t].find(*client) != site_t[*site_client][t].end()){
+                            int move_flow = min(left, site_t[*site_client][t][*client]);
+                            site_t[site][t][*client] += move_flow;
+                            site_t_usage[site][t] += move_flow;
+                            site_t[*site_client][t][*client] -= move_flow;
+                            site_t_usage[*site_client][t] -= move_flow;
+                            left -= move_flow;
+                        }
                     }
                 }
+                // }
             }
         }
     }
