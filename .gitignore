@@ -5,3 +5,11 @@ SDK_C++/bin/CodeCraft-2022
 SDK_C++/build/ALL_BUILD.vcxproj
 SDK_C++/bin/CodeCraft-2022
 SDK_C++/CodeCraft-2022/src/CodeCraft-2022
+output/solution.txt
+*.zip
+SDK_C++/CodeCraft-2022.zip
+SDK_python/CodeCraft-2022.zip
+SDK_python/CodeCraft-2022.zip
+*.zip
+SDK_C++/CodeCraft-2022/src/a.exe
+SDK_python/CodeCraft-2022.zip
