@@ -204,7 +204,7 @@ map<string, vector<string>> getSiteForClient(){
 
 map<string, vector<string>> getClientForSite(){
     map<string, vector<string>> result;
-    map<pair<string,string>, int> qos = getQoS();
+    map<pair<string, string>, int> qos = getQoS();
     int qos_constraint = getConstraint();
         for(auto it = qos.begin(); it != qos.end(); it ++){
         if(it->second >= qos_constraint)
@@ -341,14 +341,17 @@ int main(){
 
     // 尽可能塞满每一个边缘节点：超过95%的节点就尽量塞到上限，低于95%的节点就尽量塞到95%
     int position_95 = int(ceil(timestamps * 0.95) - 1);
-    for(int i = 0; i < 2; i++){
+    srand(time(NULL));
+    for(int i = 0; i < 5; i++){
         // 记录处理过的节点，避免移入节点的流量在后续操作其他节点时又流出
         set<string> site_processed;
         // for (auto site = site_bandwidth.begin(); site != site_bandwidth.end(); site++){
-        if(i >= 1){
+        if(i % 2 == 1){
             // random_shuffle(site_order.begin(), site_order.end());
             sort(site_order.begin(), site_order.end(), cmp);
             // reverse(site_order.begin(), site_order.end());
+        }else if(i >= 1 && i % 2 == 0){
+            random_shuffle(site_order.begin(), site_order.end());
         }
         for(auto si = site_order.rbegin(); si != site_order.rend(); si++){
             string site = si->first;
