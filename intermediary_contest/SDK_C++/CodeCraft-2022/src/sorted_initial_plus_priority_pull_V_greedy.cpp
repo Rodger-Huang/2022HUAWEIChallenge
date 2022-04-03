@@ -15,6 +15,7 @@
 #define CHECK_CLOCK 0
 using namespace std;
 using std::cout;
+
 // 感觉有bug没de完，流量拉不动
 // 很多0的站点，只有少数几个站点很多时间近乎满带宽。
 // 那些0的站点可能只能在95%位后拉（但是哪些时间步拉这个尚未作控制）
@@ -24,20 +25,18 @@ using std::cout;
 // priority:根据95%位值设置优先级，优先级越高，别人pull的时候优先pull它
 // pull：对于95%前的地方，尽量拉满95%,没到V的95%拉到V,不仅仅是95%，
 // score = 33xxxxx （pull优先级高的流量出了问题？）
-// 测试用
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/pressure_data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/simulated_data/";
 
-// const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+// 测试用
+const string input_path = "intermediary_contest/data/";
+const string output_path = "intermediary_contest/output/solution.txt";
 
 //测试用
-const string input_path = "../data/";
-const string output_path = "../output/solution.txt";
+// const string input_path = "../data/";
+// const string output_path = "../output/solution.txt";
 
 // 提交用
-//const string input_path = "/data/";
-//const string output_path = "/output/solution.txt";
+// const string input_path = "/data/";
+// const string output_path = "/output/solution.txt";
 
 int timestamps = 0;
 int site_number = 0;
@@ -501,7 +500,7 @@ map<pair<string,string>, vector<string>> getSiteCommonClient(map<string,set<stri
 int main(){
     if(CHECK_CLOCK)
         start = clock();
-
+    /************* 读取数据 *************/
     map<pair<string,string>, int> qos = getQoS();
     int qos_constraint = getConstraint();
     int base_cost = getBaseCost();
@@ -638,7 +637,7 @@ int main(){
         sst = clock();
     
     //priority pull
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < 1; i++){
         if(CHECK_CLOCK)
             start = clock();
         set<string> site_processed;
@@ -653,7 +652,7 @@ int main(){
                 site_order_95_and_client.push_back(make_pair(it->first, make_pair(value_95, client4site[site].size())));
             }
             else{
-                site_order_95_and_client.push_back(make_pair(it->first, make_pair(value_95,0)));
+                site_order_95_and_client.push_back(make_pair(it->first, make_pair(value_95, 0)));
             }
         }
         sort(site_order_95_and_client.begin(), site_order_95_and_client.end(), cmp2);

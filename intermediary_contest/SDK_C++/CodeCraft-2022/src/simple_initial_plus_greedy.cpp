@@ -15,19 +15,16 @@ using namespace std;
 // 分配方案使用最简单的，对于每个时间步，对于每个客户，顺序遍历它的流，找到一个能用的服务器就分上去。
 // 后续使用的是初赛时的贪心策略,尽量拉满95%
 // 测试用
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/pressure_data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/simulated_data/";
-
-// const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+const string input_path = "intermediary_contest/data/";
+const string output_path = "intermediary_contest/output/solution.txt";
 
 //测试用
 //const string input_path = "../../../../data/";
 //const string output_path = "../../../../output/solution.txt";
 
 // 提交用
-const string input_path = "/data/";
-const string output_path = "/output/solution.txt";
+// const string input_path = "/data/";
+// const string output_path = "/output/solution.txt";
 
 int timestamps = 0;
 int site_number = 0;

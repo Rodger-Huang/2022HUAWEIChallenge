@@ -16,19 +16,16 @@ using namespace std;
 // 后续使用的是初赛时的贪心策略改版,尽量拉满95%,没到V的95%拉到V,不仅仅是95%
 // score = 1726487
 // 测试用
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/pressure_data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/simulated_data/";
-
-// const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+const string input_path = "intermediary_contest/data/";
+const string output_path = "intermediary_contest/output/solution.txt";
 
 //测试用
 //const string input_path = "../../../../data/";
 //const string output_path = "../../../../output/solution.txt";
 
 // 提交用
-const string input_path = "/data/";
-const string output_path = "/output/solution.txt";
+// const string input_path = "/data/";
+// const string output_path = "/output/solution.txt";
 
 int timestamps = 0;
 int site_number = 0;

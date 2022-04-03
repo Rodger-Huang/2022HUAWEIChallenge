@@ -14,15 +14,12 @@
 using namespace std;
 // 本文件首先用于测试复赛读写格式，分配方案使用最简单的，对于每个时间步，对于每个客户，顺序遍历它的流，找到一个能用的服务器就分上去。
 // 测试用
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/pressure_data/";
-// const string input_path = "/home/hadoop/2022HUAWEIChallenge/SDK/CodeCraft2022-PressureGenerator/simulated_data/";
-
-// const string output_path = "/home/hadoop/2022HUAWEIChallenge/SDK/output/solution.txt";
+const string input_path = "intermediary_contest/data/";
+const string output_path = "intermediary_contest/output/solution.txt";
 
 //测试用
-const string input_path = "../data/";
-const string output_path = "../output/solution.txt";
+// const string input_path = "../data/";
+// const string output_path = "../output/solution.txt";
 
 // 提交用
 //const string input_path = "/data/";
@@ -385,7 +382,7 @@ int main(){
             vector<string> actual_site = site4client[client];
             //这里暂且使用擦除vector中元素的做法,如果出错,可替换成加一个flag进行判断,去计算vector中每个元素是否为0
             while(client_remaining[client].size() > 0){
-                auto remain_iter = client_remaining[client].begin();
+                auto remain_iter = client_remaining[client].begin(); // 处理client的第一个流
                 string stream_type = (*remain_iter).first;
                 int stream_bw = (*remain_iter).second;
                 int assigned_success = 0; //debug用,看看有没有不成功的assign
