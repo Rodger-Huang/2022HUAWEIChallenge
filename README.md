@@ -67,6 +67,12 @@ bash SDK_python/CodeCraft_zip.sh
 备注:试了一下站点按照对应客户数目由多到少排序提交,分数:1372126
 (有点迷惑,大概是数据集的原因,猜测数据方差较大)
 
+#### 方案五
+代码文件：sorted_initial_plus_push_pull_V_greedy.cpp, heplers.hpp
+主要思路：在方案四的基础上进行了改进，改的是后续贪心的部分。原来我们贪心是每个站点去拉取（pull）别的站点的流量。现在这个方案在pull之前增加一个push。具体做法如下：首先对每个站点初始解之后的95%位值排序，找出那些95%位值大于V的站点，把它们加到一个集合A里面，同时，找出所有时间步为0的站点，把它们加到另一个集合B里面。然后，对每一个集合A中的站点s1，在集合B中找一个或多个站点去分担s1的多个时间步的流量（首先使用一个集合B的站点，在95%前的所有时间步给s1分担流量，s1流量还没降到V一下，就再用多一个集合B的站点，以此类推。在集合B中选站点的原则是，找和s1有尽可能多的共同客户的站点）。
+push操作完之后，再进行原来的pull操作。
+练习赛分数：1195377
+
 ## 其他有用的库
 1. 测试指标生成：[CodeCraft2022-benchmark](https://github.com/diphosphane/CodeCraft2022-benchmark)
 2. 压测数据生成：[CodeCraft2022-PressureGenerator](https://github.com/diphosphane/CodeCraft2022-PressureGenerator)
