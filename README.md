@@ -73,6 +73,28 @@ bash SDK_python/CodeCraft_zip.sh
 push操作完之后，再进行原来的pull操作。
 练习赛分数：1195377
 
+#### 方案六
+
+主要思路：平均初始解+pull
+score: 910218
+
+#### 方案七
+代码文件: average_initial_plus_V_push_pull.cpp
+主要思路：平均初始解+Vpush+pull
+score:905606
+
+#### 方案八
+代码文件：greedy_initial_plus_V_push_pull.cpp
+主要思路：贪心初始解+Vpush+pull
+计算每个站点每个时间步最大可能服务的带宽量，找出最大的那些（每个站点填95%位之后的位置）先分配这些情况，剩下的按照平均分进行。
+score:871690
+
+#### 方案九
+代码文件：greedy_initial_plus_two_push_Vpull.cpp
+主要思路：贪心初始解+Vpush+Vmore_push+pull
+第二次push试图拉到V之上。
+score:908268??加上Vmore_push之后还变差了。。。？？？
+
 ## 其他有用的库
 1. 测试指标生成：[CodeCraft2022-benchmark](https://github.com/diphosphane/CodeCraft2022-benchmark)
 2. 压测数据生成：[CodeCraft2022-PressureGenerator](https://github.com/diphosphane/CodeCraft2022-PressureGenerator)
