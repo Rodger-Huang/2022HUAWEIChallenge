@@ -1,6 +1,7 @@
 #include "helpers.hpp"
 using namespace std;
-//score: 871690
+//score: 805507 这是修正了两行代码之后的成绩
+
 //-------------------全局变量------------------
 int qos_constraint = getConstraint();
 int base_cost = getBaseCost();
@@ -163,7 +164,7 @@ map<int, vector<string>> getTimestampPossibleBig(){
                 continue;
             } //如果这个站点遍历完了这个列表
                 
-            if(site_accepted_big_number[si->first] > floor(timestamps * 0.05)){
+            if(site_accepted_big_number[si->first] >= floor(timestamps * 0.05)){
                 not_usable_site.insert(si->first);
                 continue;  //如果站点接收大流量数目太多了
             }
@@ -174,12 +175,13 @@ map<int, vector<string>> getTimestampPossibleBig(){
                 this_round_site = si->first;
                 this_round_ts = time_index;
             }
-            site_idx_indicator[si->first]--;
-
+            //site_idx_indicator[si->first]--; //写错位置了，应该每次只移动选中的那个
         }
+        //cout<<"this round site = "<<this_round_site<<" biggest="<<this_round_biggest<<" ts="<<this_round_ts<<endl;
         //if(this_round_biggest < base_cost)
         //    break;
         if(this_round_site != ""){
+            site_idx_indicator[this_round_site]--;
             if(result.find(this_round_ts) != result.end()){
                 bool can_add = true;
                 for(auto ss = result[this_round_ts].begin(); ss != result[this_round_ts].end(); ss++){
@@ -201,7 +203,11 @@ map<int, vector<string>> getTimestampPossibleBig(){
                 site_accepted_big_number[this_round_site] += 1;
             }
         }
+        else{
+            break;
+        }
     }
+
     return result;
 }
 
@@ -314,8 +320,9 @@ int main(){
         }
     }
 
-
+    
     int position_95 = int(ceil(timestamps * 0.95) - 1);
+    for(int kk = 0; kk < 2; kk++){
     for(int i = 0; i < 1; i++){
         set<string> zero_site;
         set<string> bigger_than_V_site;
@@ -396,6 +403,7 @@ int main(){
             }
         }
     }
+    
 
     //pull
     for(int i = 0; i < 1; i++){
@@ -473,8 +481,10 @@ int main(){
 
             
         }
+        }
     }
 
+    
     /****************** 输出结果 ******************/
     ofstream solution;
     solution.open(output_path);
