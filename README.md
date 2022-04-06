@@ -84,10 +84,13 @@ score: 910218
 score:905606
 
 #### 方案八
+current best score = 736400
 代码文件：greedy_initial_plus_V_push_pull.cpp
 主要思路：贪心初始解+Vpush+pull
 计算每个站点每个时间步最大可能服务的带宽量，找出最大的那些（每个站点填95%位之后的位置）先分配这些情况，剩下的按照平均分进行。
 score:871690
+改了两行代码之后 score:805507
+增加了一个参数并调参之后 **score:736400** （初始贪心那个函数ref_param>0.3得到的分数，如果用公共客户数目大于1判断得到747840分）
 
 #### 方案九
 代码文件：greedy_initial_plus_two_push_Vpull.cpp

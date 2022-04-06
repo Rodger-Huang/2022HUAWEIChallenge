@@ -186,7 +186,8 @@ map<int, vector<string>> getTimestampPossibleBig(){
                 bool can_add = true;
                 for(auto ss = result[this_round_ts].begin(); ss != result[this_round_ts].end(); ss++){
                     pair<string, string> tmp_key =make_pair(*ss, this_round_site);
-                    if(site_common_client[tmp_key].size() > 0){
+                    double ref_param = (double) (site_common_client[tmp_key].size())/((double)client4site[*ss].size() + (double)client4site[this_round_site].size() - (double)site_common_client[tmp_key].size());
+                    if(ref_param > 0.3){ //或者试一下 site_common_client[tmp_key].size() > 1
                         can_add = false;
                         break;
                     }
