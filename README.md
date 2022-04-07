@@ -97,6 +97,14 @@ bash SDK_python/CodeCraft_zip.sh
   第二次push试图拉到V之上。
 - score:908268??加上Vmore_push之后还变差了。。。？？？
 
+#### 方案十
+
+- 代码文件:greedy2_initial.cpp
+- 主要思路：讨论后的贪心初始解+push+pull
+- score：869408
+
+
+
 ## 其他有用的库
 1. 测试指标生成：[CodeCraft2022-benchmark](https://github.com/diphosphane/CodeCraft2022-benchmark)
 2. 压测数据生成：[CodeCraft2022-PressureGenerator](https://github.com/diphosphane/CodeCraft2022-PressureGenerator)
