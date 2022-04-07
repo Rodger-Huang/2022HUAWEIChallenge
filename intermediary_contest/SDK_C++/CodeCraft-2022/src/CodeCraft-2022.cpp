@@ -486,6 +486,25 @@ map<pair<string,string>, vector<string>> getSiteCommonClient(map<string,set<stri
     return result;
 }
 
+map<string, set<string>> getPossiblePullSite(map<string,set<string>>& set_client4site, map<string,set<string>>& set_site4client){
+    map<string, set<string>> result;
+    for(auto it = set_client4site.begin(); it != set_client4site.end(); it++){ // 遍历所有site
+        string site = it->first;
+        set<string> possible_pull_site;
+        for(auto client = set_client4site[site].begin(); client != set_client4site[site].end(); client++){
+            for(auto site_client = set_site4client[*client].begin(); site_client != set_site4client[*client].end(); site_client++){
+                string posb_s = *site_client;
+                if(posb_s == site){
+                    continue;
+                }
+                possible_pull_site.insert(posb_s);
+            }
+        }
+        result[site] = possible_pull_site;
+    }
+    return result;
+}
+
 int main(){
     /************* 读取数据 *************/
     map<pair<string,string>, int> qos = getQoS();
@@ -501,7 +520,9 @@ int main(){
 
     // 统计两个站点的共同客户
     map<pair<string,string>, vector<string>> site_common_client = getSiteCommonClient(set_client4site);
-    
+    // 统计每个节点的其他可迁移流量节点
+    map<string, set<string>> site_possible_pull_site = getPossiblePullSite(set_client4site, set_site4client);
+
     //operateOnGlobalVariable();
     //节约开销，只用到了client_order，只放这部分
     vector<pair<string, int>> client_order;
@@ -699,26 +720,30 @@ int main(){
         //-----------------优先级设置完毕--------------
     
         // 边缘节点从95%位值小的开始处理，拉取其他边缘节点的流量
+        // 记录95%值大于V的边缘节点
+        map<string, int> site_more_95;
         for(auto si = site_order_95_and_client.rbegin(); si != site_order_95_and_client.rend(); si++){
             string site = si->first; // 当前处理的边缘节点
             site_processed.insert(site);
             vector<int> index = argsort(site_t_usage[site]);
             int value_95 = site_t_usage[site][index[position_95]];
-            if(value_95 < base_cost){
+            site_more_95[site] = value_95;
+            si->second.first = value_95;
+            if(value_95 <= base_cost){
                 value_95 = base_cost;
             }
             // 找出这个站点对应客户对应的站点集合，作为它可能拉取站点的集合
             // 找出它对应客户的对应节点集合，在节点集合里面，根据优先级pull流量
-            set<string> possible_pull_site;
-            for(auto client = client4site[site].begin(); client != client4site[site].end(); client++){
-                for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
-                    string posb_s = *site_client;
-                    if(site_processed.find(posb_s) != site_processed.end()){
-                        continue;
-                    }
-                    possible_pull_site.insert(posb_s);
-                }
-            }
+            set<string> possible_pull_site = site_possible_pull_site[site];
+            // for(auto client = client4site[site].begin(); client != client4site[site].end(); client++){
+            //     for(auto site_client = site4client[*client].begin(); site_client != site4client[*client].end(); site_client++){
+            //         string posb_s = *site_client;
+            //         if(site_processed.find(posb_s) != site_processed.end()){
+            //             continue;
+            //         }
+            //         possible_pull_site.insert(posb_s);
+            //     }
+            // }
             for(int position = 0; position < int(index.size()); position++){
                 int t = index[position];
                 int left = 0;
@@ -734,6 +759,9 @@ int main(){
                 // 找可用节点pull流量
                 for(auto it = possible_pull_site.begin(); it != possible_pull_site.end(); it++){
                     string site_client = *it;
+                    if(site_processed.find(site_client) != site_processed.end()){
+                        continue;
+                    }
                     if(site_t_usage[site_client][t] > base_cost){ // 当目标节点的容量大于V时，才需要移出
                         // 找出site和site_client的共同客户
                         pair<string, string> site_combine = make_pair(site, site_client);
@@ -760,6 +788,87 @@ int main(){
                                     }
                                     else{
                                         stream_iter++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        map<string, int> site_average;
+        for(auto si = site_more_95.begin(); si != site_more_95.end(); si++){
+            string site = si->first;
+            set<string> possible_site = site_possible_pull_site[site];
+            int count = 0;
+            int value_95 = 0;
+            possible_site.insert(site);
+            for(auto site_client = possible_site.begin(); site_client != possible_site.end(); site_client++){
+                string posb_s = *site_client;
+                value_95 += site_more_95[posb_s];
+                count++;
+            }
+            int average_95 = ceil(value_95 / count); // 我潜在假设认为平均值应该大于V
+            if(site_average.find(site) != site_average.end()){
+                site_average[site] = min(average_95, site_average[site]);
+            }else{
+                site_average[site] = average_95;
+            }
+        }
+        site_processed.clear();
+        sort(site_order_95_and_client.begin(), site_order_95_and_client.end(), cmp2); // 先处理95%值大，客户数多的边缘节点，
+        for(auto si = site_order_95_and_client.rbegin(); si != site_order_95_and_client.rend(); si++){
+            string site = si->first;
+            site_processed.insert(site);
+            vector<int> index = argsort(site_t_usage[site]);
+            int value_95 = site_t_usage[site][index[position_95]];
+            if(value_95 < site_average[site]){
+                set<string> possible_pull_site = site_possible_pull_site[site];
+                for(int position = 0; position < int(index.size()); position++){
+                    int t = index[position];
+                    int left = 0;
+                    if(position <= position_95){ 
+                        left = site_average[site] - site_t_usage[site][t];
+                    }
+                    else{
+                        left = site_bandwidth[site] - site_t_usage[site][t];
+                    }
+                    if(left <= 0){
+                        continue;
+                    }
+                    // 找可用节点pull流量
+                    for(auto it = possible_pull_site.begin(); it != possible_pull_site.end(); it++){
+                        string site_client = *it;
+                        if(site_processed.find(site_client) != site_processed.end()){
+                            continue;
+                        }
+                        if(site_t_usage[site_client][t] > site_average[site_client]){ // 当目标节点的容量大于V时，才需要移出
+                            // 找出site和site_client的共同客户
+                            pair<string, string> site_combine = make_pair(site, site_client);
+                            vector<string> common_client = site_common_client[site_combine];
+                            for(auto client = common_client.begin(); client != common_client.end(); client++){
+                                if(site_t[site_client][t].find(*client) != site_t[site_client][t].end()){
+                                    // 确定move flow
+                                    // 这里用引用,即site_client_stream_list 指向的就是 site_t[*site_client][t][*client]所指的地方,改前者等于改后者
+                                    vector<pair<string, int>>& site_client_stream_list = site_t[site_client][t][*client];
+                                    sort(site_client_stream_list.begin(), site_client_stream_list.end(), cmp); // 对这个vector排序一下,流类型从小到大
+                                    // 在left允许的情况下,移动尽可能多的流到这边
+                                    // 使用iterator,便于删除,这里使用手动stream_iter++,而不是自动加
+                                    for(auto stream_iter = site_client_stream_list.begin(); stream_iter != site_client_stream_list.end();){
+                                        string stream_type = (*stream_iter).first;
+                                        int stream_bw = (*stream_iter).second;
+                                        // 注意只能一整个一整个地移动,小于等于就移动它
+                                        if(stream_bw <= left){
+                                            pair<string, int> move_flow = make_pair(stream_type, stream_bw);
+                                            site_t[site][t][*client].push_back(move_flow);
+                                            site_t_usage[site][t] += move_flow.second;
+                                            stream_iter = site_client_stream_list.erase(stream_iter);
+                                            site_t_usage[site_client][t] -= move_flow.second;
+                                            left -= move_flow.second;
+                                        }
+                                        else{
+                                            stream_iter++;
+                                        }
                                     }
                                 }
                             }
