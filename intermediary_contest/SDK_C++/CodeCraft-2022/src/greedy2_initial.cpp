@@ -49,9 +49,10 @@ void operateOnGlobalVariable(){
         site_client_number.insert(make_pair(it->first, it->second.size()));
     }
 }
+
+//对每一个client, 对其site排序,根据site对应的可服务client数目排,由多到少
 map<string, vector<string>> getSiteOrderForClient(){
     map<string, vector<string>> result;
-    //对每一个client, 对其site排序,根据site对应的可服务client数目排,由多到少
     for(auto it = site4client.begin(); it != site4client.end(); it++){
         string client = it->first;
         vector<pair<string,int>> this_client_site_order_tmp;
@@ -135,6 +136,7 @@ int main(){
     map<int, map<string, int>> ts_site_remaining; //当前剩余多少，分配一个流修改一次
     //当前剩余多少，完成整个时间步分配之后才修改，实际上暂时没有用到这个，因为在每次流分配的时候顺手改了site_usage,就不借助这个改了
     //map<int, map<string, int>> ts_site_current_bw; 
+    // 每一时刻，每个客户，多个流的需求
     map<int, map<string, vector<pair<string, int>>>> ts_client_remaining;
 
     start = clock();
@@ -192,8 +194,7 @@ int main(){
                         st_iter++;
                     }
                 }
-            }
-            
+            }  
         }
     }
 
@@ -228,7 +229,6 @@ int main(){
                 }
             }
         }
-
     }
     //------------平均分结束---------------
     

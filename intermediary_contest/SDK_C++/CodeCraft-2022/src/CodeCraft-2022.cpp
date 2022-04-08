@@ -506,7 +506,7 @@ map<string, set<string>> getPossiblePullSite(map<string,set<string>>& set_client
 }
 
 int main(){
-    /************* 读取数据 *************/
+    /********************** 读取数据 **********************/
     map<pair<string,string>, int> qos = getQoS();
     int qos_constraint = getConstraint();
     int base_cost = getBaseCost();
@@ -539,12 +539,12 @@ int main(){
     //将原来能用int表示的单个客户需求,用vector<pair<string,int>>表示
     map<string, vector<map<string,vector<pair<string,int>>>>> site_t;
     map<string, vector<int>> site_t_usage; // [site]
-
+    /*************************** 获得初始解 ***************************/
     for(int t = 0; t < timestamps; t++){
         map<string, vector<pair<string, int>>> client_remaining;
         map<string, int> site_remaining = site_bandwidth;
         map<string, int> site_current_bw = site_bandwidth;
-        map<string, map<string,vector<pair<string,int>>>> site_t_client; // [site][client][stream_type][stream_bw]
+        map<string, map<string, vector<pair<string, int>>>> site_t_client; // [site][client][stream_type][stream_bw]
         map<string, int> site_current_ts_usage;
 
         // 找出当前时刻,客户的需求,初始化client_remaining
@@ -676,7 +676,7 @@ int main(){
         }
     }
 
-    /****************** 重新分配流量，贪心 ******************/
+    /*************************** 重新分配流量，贪心 ***************************/
     int position_95 = int(ceil(timestamps * 0.95) - 1);
     // priority pull
     for(int i = 0; i < 1; i++){
