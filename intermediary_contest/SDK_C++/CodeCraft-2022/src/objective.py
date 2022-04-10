@@ -8,12 +8,12 @@ import csv
 import sys
 
 
-input_path = "../data/"
-output_path = "../output/solution.txt"
+input_path = "intermediary_contest/data/"
+output_path = "intermediary_contest/output/solution.txt"
 #output_path = "../output/test_sol.txt"
 
-check_site_over_ts_path = "../output/site_use_over_ts.txt"
-check_site_detail_path = "../output/site_detail.txt"
+check_site_over_ts_path = "intermediary_contest/output/site_use_over_ts.txt"
+check_site_detail_path = "intermediary_contest/output/site_detail.txt"
 
 def getSiteBandwidth():
     site_bandwidth = {}

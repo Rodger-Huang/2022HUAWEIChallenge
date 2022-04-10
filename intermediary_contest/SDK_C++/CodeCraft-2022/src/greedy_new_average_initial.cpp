@@ -117,6 +117,7 @@ map<pair<string,string>, vector<string>> getSiteCommonClient(){
 map<int, vector<string>> getTimestampPossibleBig(){
     map<pair<string,string>, vector<string>> site_common_client = getSiteCommonClient();
     map<int, vector<string>> result;
+    // 每个边缘节点每个时刻存在的最大接收流量
     map<string, vector<int>> site_possible_serve;
     map<string, vector<int>> site_skip_ts; //先用这个存，这个存完之后，这样子ts顺序能够按照潜在能吸收带宽从大到小的顺序来
     //后续考察站点95%后位置是否用尽了，没用尽的话把这个站点这个时间步也塞到result里面
@@ -155,6 +156,7 @@ map<int, vector<string>> getTimestampPossibleBig(){
         vector<int> index = argsort(site_possible_serve[si->first]); //排从小到大
         site_idx[si->first] = index;
         site_idx_indicator[si->first] = timestamps - 1;
+        // 记录边缘节点已经选取的5%时刻数量
         site_accepted_big_number[si->first] = 0;
     }
     set<string> not_usable_site;
@@ -190,8 +192,8 @@ map<int, vector<string>> getTimestampPossibleBig(){
             if(result.find(this_round_ts) != result.end()){
                 bool can_add = true;
                 for(auto ss = result[this_round_ts].begin(); ss != result[this_round_ts].end(); ss++){
-                    pair<string, string> tmp_key =make_pair(*ss, this_round_site);
-                    double ref_param = (double) (site_common_client[tmp_key].size())/((double)client4site[*ss].size() + (double)client4site[this_round_site].size() - (double)site_common_client[tmp_key].size());
+                    pair<string, string> tmp_key = make_pair(*ss, this_round_site);
+                    double ref_param = (double) (site_common_client[tmp_key].size()) / ((double)client4site[*ss].size() + (double)client4site[this_round_site].size() - (double)site_common_client[tmp_key].size());
                     if(ref_param > 0.3){ //或者试一下 site_common_client[tmp_key].size() > 1
                         can_add = false;
                         break;
@@ -248,7 +250,6 @@ map<int, vector<string>> getTimestampPossibleBig(){
         }
     }
     */
-    
     return result;
 }
 
@@ -583,8 +584,6 @@ int main(){
                     }
                 }
             }
-
-            
         }
         }
     }

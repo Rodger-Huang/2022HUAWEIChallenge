@@ -473,14 +473,11 @@ int main(){
                                 else{
                                     stream_iter++;
                                 }
-                            }
-                            
+                            } 
                         }
                     }
                 }
             }
-
-            
         }
         }
     }

@@ -69,7 +69,7 @@ map<string, int> getSiteBandwidth(){
     return result;
 }
 
-//增加了找到就break，另外数据中的config.ini中的qos_constraint是有下划线的但复赛任务书中没有,也许是任务书漏掉了,这里找的还是有下划线的qos
+// 增加了找到就break，另外数据中的config.ini中的qos_constraint是有下划线的但复赛任务书中没有,也许是任务书漏掉了,这里找的还是有下划线的qos
 int getConstraint(){
     ifstream fconfig;
     string target_file = input_path + "config.ini";
@@ -94,7 +94,7 @@ int getConstraint(){
         cout<<"qos constraint(int):"<<qos_constraint<<endl;
     return qos_constraint;
 }
-//复赛任务书增加了base_cost
+// 复赛任务书增加了base_cost
 int getBaseCost(){
     ifstream fconfig;
     string target_file = input_path + "config.ini";
