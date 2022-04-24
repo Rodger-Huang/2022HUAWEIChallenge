@@ -28,12 +28,12 @@ clock_t start, endtime;
 clock_t st, ed;
 
 // 测试用
-//const string input_path = "intermediary_contest/data/";
-//const string output_path = "intermediary_contest/output/solution.txt";
+const string input_path = "intermediary_contest/data/";
+const string output_path = "intermediary_contest/output/solution.txt";
 
 //测试用
-const string input_path = "../data/";
-const string output_path = "../output/solution.txt";
+// const string input_path = "../data/";
+// const string output_path = "../output/solution.txt";
 
 // 提交用
 //const string input_path = "/data/";
@@ -69,7 +69,7 @@ map<string, int> getSiteBandwidth(){
     return result;
 }
 
-//增加了找到就break，另外数据中的config.ini中的qos_constraint是有下划线的但复赛任务书中没有,也许是任务书漏掉了,这里找的还是有下划线的qos
+// 增加了找到就break，另外数据中的config.ini中的qos_constraint是有下划线的但复赛任务书中没有,也许是任务书漏掉了,这里找的还是有下划线的qos
 int getConstraint(){
     ifstream fconfig;
     string target_file = input_path + "config.ini";
@@ -94,7 +94,7 @@ int getConstraint(){
         cout<<"qos constraint(int):"<<qos_constraint<<endl;
     return qos_constraint;
 }
-//复赛任务书增加了base_cost
+// 复赛任务书增加了base_cost
 int getBaseCost(){
     ifstream fconfig;
     string target_file = input_path + "config.ini";
@@ -447,9 +447,10 @@ void operateOnGlobalVariable(){
         site_client_number.insert(make_pair(it->first, it->second.size()));
     }
 }
+
+//对每一个client, 对其site排序,根据site对应的可服务client数目排,由多到少
 map<string, vector<string>> getSiteOrderForClient(){
     map<string, vector<string>> result;
-    //对每一个client, 对其site排序,根据site对应的可服务client数目排,由多到少
     for(auto it = site4client.begin(); it != site4client.end(); it++){
         string client = it->first;
         vector<pair<string,int>> this_client_site_order_tmp;
@@ -533,6 +534,7 @@ int main(){
     map<int, map<string, int>> ts_site_remaining; //当前剩余多少，分配一个流修改一次
     //当前剩余多少，完成整个时间步分配之后才修改，实际上暂时没有用到这个，因为在每次流分配的时候顺手改了site_usage,就不借助这个改了
     //map<int, map<string, int>> ts_site_current_bw; 
+    // 每一时刻，每个客户，多个流的需求
     map<int, map<string, vector<pair<string, int>>>> ts_client_remaining;
 
     start = clock();
@@ -653,7 +655,6 @@ int main(){
                 }
             }
         }
-
     }
     //------------平均分结束---------------
     

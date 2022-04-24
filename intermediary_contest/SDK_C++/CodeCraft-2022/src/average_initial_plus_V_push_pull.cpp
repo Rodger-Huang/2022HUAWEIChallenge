@@ -18,12 +18,12 @@ using namespace std;
 //score:905606
 //一开始平均的话说明没有那么多大站点，担心push的效果会不会不明显？
 // 测试用
-//const string input_path = "intermediary_contest/data/";
-//const string output_path = "intermediary_contest/output/solution.txt";
+const string input_path = "intermediary_contest/data/";
+const string output_path = "intermediary_contest/output/solution.txt";
 
 // 测试用
-const string input_path = "../data/";
-const string output_path = "../output/solution.txt";
+// const string input_path = "../data/";
+// const string output_path = "../output/solution.txt";
 
 // 提交用
 // const string input_path = "/data/";
@@ -539,6 +539,7 @@ int main(){
             string client = co->first;
             // 这里actual_site使用排序,正序,倒序都可以试一下,练习赛中目前是si=actual_site.begin()开始比较好
             vector<string> actual_site = site_order_for_client[client]; // 先分配连接客户数多的边缘节点
+            random_shuffle(actual_site.begin(), actual_site.end());
             // 这里暂且使用擦除vector中元素的做法,如果出错,可替换成加一个flag进行判断,去计算vector中每个元素是否为0
             auto si = actual_site.begin();
             auto remain_iter = client_remaining[client].begin();
@@ -567,6 +568,7 @@ int main(){
                 }
                 si++;
                 if(si == actual_site.end()){
+                    reverse(actual_site.begin(), actual_site.end());
                     si = actual_site.begin();
                 }
             }
